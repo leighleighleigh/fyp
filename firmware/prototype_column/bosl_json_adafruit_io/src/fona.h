@@ -79,7 +79,8 @@ void setupFONA()
     delay(10000);
     fona.setFunctionality(1); // AT+CFUN=1
 
-    fona.setNetworkSettings(F("mdata.net.au"));
+    // fona.setNetworkSettings(F("mdata.net.au"));
+    fona.setNetworkSettings(F("telstra.internet"));
 
     /*
     // Other examples of some things you can set:
