@@ -1,38 +1,11 @@
-/*BoSL board code for green roof SM sensor tests Jan 2022:
- * 
- * Version 0.1 was used to deploy sensors on XX Jan 2022
-
-This code uploads 3 data points to http://www.bosl.com.au/IoT/testing/databases/ with the filename changed under "CLOUD DEFINITIONS" below.
-
-The data are temperature (C)and VWC (%) from a SMT100a soil moisture sensor from Treubner 
-
-The time on the CSV file is 11 hours behind Melbourne time (GMT). The column headers are temperature, EC, and Depth, but should be Temp (C) and VWC (%) which correspond to the data types uploaded.
-
-The program scans the sensors every ~10 minutes, which can be changed using the parameter "ScanInterval". 
-
-For each sensor set, change the Site_ID below to BW_SM1, BW_SM2, etc.
-
+/*BoSL board code modified for Leigh Oliver FYP
+This sketch intended to provide a minimal working example of SIM7000G HTTP requests.
+'Low-power' method have been removed from the original version.
+Uploads placeholder data to http://www.bosl.com.au/IoT/testing/databases/ with the filename changed under "CLOUD DEFINITIONS" below.
 */
+#include <avr/power.h>  
+#include <SoftwareSerial.h>
 
-
-
-//CLOUD DEFINITIONS
-String Site_ID = "LO_BW3"; // This is the ID used for the website URL to store the recorded data
-String Website_URL = "www.bosl.com.au/IoT/testing/scripts/WriteMe.php?SiteName="; //Website address e.g. www.bosl.com.au/IoT/E2DesignLabs/scripts/WriteMe.php?SiteName=
-
-//double Max_Upload_Interval = 3600000; // [milliseconds] This is the maximum time between uploads to the web server. e.g. 1 hour is 3,600,000 milliseconds
-double Max_Upload_Interval = 10000;
-
-//POWER FUNCTIONS AND VARIABLES
-#include <avr/power.h>  //change from avr/power.h in Luke's code due to directory org. on my computer
-extern volatile unsigned long timer0_millis;
-
-//GLOBAL VARIABLES FOR TRANSMISSION AND LOGGING INTERVALS
-uint32_t lstTransmit = 0; //timestamp of last transmit (milli seconds)
-//uint8_t reps = 0;
-byte transmit;
-
-//SIM7000 definitions and declarations
 #define SIMCOM_7000 // SIM7000A/C/E/G
 #define BAUDRATE 9600 // MUST be below 19200 (for stability) but 9600 is more stable
 #define CHARBUFF 196 //SIM7000 serial response buffer //longer than 255 will cause issues
@@ -40,51 +13,29 @@ byte transmit;
 #define DTR 5 // Connect with solder jumper
 #define BOSL_RX 9 // Microcontroller RX
 #define BOSL_TX 8 // Microcontroller TX
-#include <SoftwareSerial.h>
+
+//CLOUD DEFINITIONS
+String Site_ID = "LO_BW3"; // This is the ID used for the website URL to store the recorded data
+String Website_URL = "www.bosl.com.au/IoT/testing/scripts/WriteMe.php?SiteName="; 
+
+//POWER FUNCTIONS AND VARIABLES
+unsigned long transmitInterval = 60000; // Milliseconds
+
+//GLOBAL VARIABLES FOR TRANSMISSION AND LOGGING INTERVALS
 SoftwareSerial simCom = SoftwareSerial(BOSL_RX, BOSL_TX);
 char response[CHARBUFF]; //sim7000 serial response buffer
-char Battery_Level[4]; //Battery Level to be read from the SIM7000
-
-//Libraries and sub-procedures for sensors
-
-#include <LowPower.h>
-
-short counter;
-
-//int No;
-
-
-int a, ScanInterval, MinLogInterval;
-String SensorName;
-//char response[CHARBUFF];
+char simBattLevel[4]; //Battery Level to be read from the SIM7000
 
 void setup(){
-  /*longer wire need this
-  TWBR = 158;
-  TWSR |= bit (TWPS1);*/
-  
   Serial.begin(BAUDRATE);
-
-  ScanInterval = 10; //set the approximate seconds between each scan: every 30 minutes is 1800 seconds, subtract 20 seconds for program running time
-
-  
- // MinLogInterval = 360; //set the seconds between each logging point
-
-  SensorName = "LO_BW3"; //set to whatever you want
-
-
-  
-     //TURN OFF SIM MODULE
+ 
+  //TURN OFF SIM MODULE
   simOff();
 
   //BEGIN SIM7000
   Serial.begin(BAUDRATE);
   simCom.begin(BAUDRATE);
 
-
-  //Serial.println(No);
-   
-  
   //TURN ON SIM
   simOn();
   
@@ -92,9 +43,9 @@ void setup(){
   simInit();
   
   //TRANSMIT DATA FOR FIRST TIME
-  Battery_Read();
+  readBatteryLevel();
   
-  Transmit();
+  transmitToWeb();
 
   //TURN OFF SIM
   simOff();
@@ -103,17 +54,15 @@ void setup(){
 }
 
 void loop(){
-
-  Serial.println(F("Sleep"));
-  
-  Sleepy(ScanInterval);
+  Serial.println("Sleeping for " + String(transmitInterval/1000));
+  delay(transmitInterval);
  
   Serial.println(F(""));
    
     simOn();
     netUnreg();
-    Battery_Read();
-    Transmit();
+    readBatteryLevel();
+    transmitToWeb();
     simOff();
  
 }
@@ -178,9 +127,9 @@ bool sendATcmd(String ATcommand, char* expctAns, unsigned int timeout){
 
 
 
-void Battery_Read(){
+void readBatteryLevel(){
   if (sendATcmd(F("AT+CBC"), "OK",1000)){
-    memset(Battery_Level, '\0', 5); 
+    memset(simBattLevel, '\0', 5); 
     bool end = 0;
     uint8_t x = 0;
     uint8_t j = 0;
@@ -213,7 +162,7 @@ void Battery_Read(){
     if (response[i] != ','){
       switch(x){
           case 11:
-              Battery_Level[j] = response[i];
+              simBattLevel[j] = response[i];
           break;             
       }
       //increment char array counter
@@ -228,7 +177,7 @@ void Battery_Read(){
 }
 
 
-void Transmit(){
+void transmitToWeb(){
   ////TRANSMIT DATA TO WEB
 
   String dataStr; //Transmit URL
@@ -242,7 +191,7 @@ void Transmit(){
   dataStr += "&EC=";
   dataStr += String(123);
   dataStr += "&B=";
-  dataStr += String(Battery_Level);
+  dataStr += String(simBattLevel);
   dataStr += "\"";
 
 
@@ -281,8 +230,6 @@ void Transmit(){
   sendATcmd(F("AT+SAPBR=0,1"), "OK",1000);
   
   netUnreg();
-
-  lstTransmit = millis();
 }
 
 
@@ -295,9 +242,9 @@ void simOn() {
   digitalWrite(BOSL_TX, HIGH);
   pinMode(BOSL_RX, INPUT_PULLUP);
   digitalWrite(PWRKEY, LOW);
-  xDelay(1000); // For SIM7000
+  delay(1000); // For SIM7000
   digitalWrite(PWRKEY, HIGH);
-  xDelay(4000);
+  delay(4000);
 }
 
 void simOff() {
@@ -307,25 +254,10 @@ void simOff() {
   digitalWrite(BOSL_TX, LOW);
   digitalWrite(BOSL_RX, LOW);
   digitalWrite(PWRKEY, LOW);
-  xDelay(1200); // For SIM7000
+  delay(1200); // For SIM7000
   digitalWrite(PWRKEY, HIGH);
-  xDelay(2000);
+  delay(2000);
 }
-
-
-void xDelay(uint32_t tmz){
-  //like delay but lower power
-  
-  uint32_t tmzslc = tmz/64;
-  clock_prescale_set(clock_div_64);
-  delay(tmzslc);
-  clock_prescale_set(clock_div_1);
-  cli();
-  timer0_millis += 63*tmzslc; 
-  sei();
-  delay(tmz-64*tmzslc);
-}
-
 
 void netUnreg(){
   //power down cellular functionality
@@ -339,11 +271,11 @@ void netReg(){
   
   if(sendATcmd(F("AT+CFUN=1"), "+CPIN: READY", 1000) == 0){
       sendATcmd(F("AT+CFUN=6"), "OK", 10000);
-      xDelay(10000);
+      delay(10000);
       
       sendATcmd(F("AT+CFUN=1"), "OK", 1000);
   }
-  xDelay(2000);
+  delay(2000);
   sendATcmd(F("AT+CREG?"), "+CREG: 0,1", 2000);
 }
 
@@ -356,25 +288,4 @@ void simInit(){
       
       sendATcmd(F("AT&W0"),"OK",1000);
   
-}
-
-
-
-////SLEEPS FOR SET TIME////
-void Sleepy(uint16_t ScanInterval){ //Sleep Time in seconds
-    
-    simCom.flush(); // must run before going to sleep
-  
-    Serial.flush(); // ensures that all messages have sent through serial before arduino sleeps
-
-    
-    while(ScanInterval >= 1){
-        LowPower.powerDown(SLEEP_1S, ADC_OFF, BOD_OFF); //8 seconds dosen't work on the 8mhz
-        //advance millis timer as it is paused in sleep
-        noInterrupts();
-        timer0_millis += 1000;
-        interrupts();
-        
-        ScanInterval -= 1;
-    }
 }
