@@ -21,7 +21,7 @@ void setup()
   pinMode(SMT_TMP,INPUT);
   pinMode(SMT_SOIL,INPUT);
   // Wait for connection
-  while(!Serial) continue;
+  // while(!Serial) continue;
 
   // Setup FONA
   setupFONA();
