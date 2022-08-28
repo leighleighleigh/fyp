@@ -20,6 +20,7 @@ Adafruit_FONA_LTE fona = Adafruit_FONA_LTE();
 #define AIO_SERVER "io.adafruit.com"
 #define AIO_SERVERPORT 1883
 #define AIO_USERNAME "leighleighleigh"
+#define AIO_BOARDNAME "BW3"
 #define AIO_KEY "aio_wrSI324kBhMYCBMYioznPAinojqs"
 
 /****************************** OTHER STUFF ***************************************/
@@ -27,6 +28,7 @@ char imei[16] = {0}; // Use this for device ID
 uint8_t type;
 float latitude, longitude, speed_kph, heading, altitude, second;
 uint16_t year;
+uint16_t vBatt;
 uint8_t month, day, hour, minute;
 
 // char PIN[5] = "1234"; // SIM card PIN
@@ -34,7 +36,8 @@ uint8_t month, day, hour, minute;
 // NOTE: Keep the buffer sizes as small as possible, espeially on
 // Arduino Uno which doesn't have much computing power to handle
 // large buffers. On Arduino Mega you shouldn't have to worry much.
-char locBuff[200];
+char locBuff[230];
+char timeBuff[32];
 
 bool netStatus();
 void moduleSetup();
@@ -108,22 +111,20 @@ void loopFONA()
     StaticJsonDocument<128> doc;
     JsonObject root = doc.to<JsonObject>();
 
-    // Add timestamp information to the json document
-    doc["value"] = millis();
-
-    // Read GPS
-    // JsonObject fonaGPS0 = root.createNestedObject("gps");
-    readGPStoJSON(root);
-
+    JsonObject sensorDoc = root.createNestedObject("value");
+    fona.getBattVoltage(&vBatt);
+    fona.getTime(timeBuff,32);
+    sensorDoc["nickname"] = String(AIO_BOARDNAME);
+    sensorDoc["IMEI"] = imei;
+    sensorDoc["battery_mv"] = vBatt;
+    sensorDoc["network_time"] = timeBuff;
+    sensorDoc["uptime_sec"] = millis()/1000;
+    // Read to another subobject for GPS data
+    JsonObject gpsDoc = sensorDoc.createNestedObject("gps");
+    readGPStoJSON(gpsDoc);
     // Write the JSON output to serial, and the buffer
-    // serializeJson(doc, locBuff);
-    serializeJson(doc, locBuff, 200);
+    serializeJson(doc, locBuff, 230);
 
-    // Also construct a combined, comma-separated location array
-    // sprintf(locBuff, "%s", String("99").c_str());
-
-    // Disable data just to make sure it was actually off so that we can turn it on
-    // fona.openWirelessConnection(false);
 
     // Open wireless connection if not already activated
     if (!fona.wirelessConnStatus())
