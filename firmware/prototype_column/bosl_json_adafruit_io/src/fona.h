@@ -36,7 +36,7 @@ uint8_t month, day, hour, minute;
 // NOTE: Keep the buffer sizes as small as possible, espeially on
 // Arduino Uno which doesn't have much computing power to handle
 // large buffers. On Arduino Mega you shouldn't have to worry much.
-char locBuff[230];
+char locBuff[250];
 char timeBuff[32];
 
 bool netStatus();
@@ -108,7 +108,7 @@ void readGPStoJSON(JsonObject &gps_obj)
 void loopFONA()
 {
     // The json document variable
-    StaticJsonDocument<128> doc;
+    StaticJsonDocument<200> doc;
     JsonObject root = doc.to<JsonObject>();
 
     JsonObject sensorDoc = root.createNestedObject("value");
@@ -119,11 +119,13 @@ void loopFONA()
     sensorDoc["battery_mv"] = vBatt;
     sensorDoc["network_time"] = timeBuff;
     sensorDoc["uptime_sec"] = millis()/1000;
+
     // Read to another subobject for GPS data
     JsonObject gpsDoc = sensorDoc.createNestedObject("gps");
     readGPStoJSON(gpsDoc);
+
     // Write the JSON output to serial, and the buffer
-    serializeJson(doc, locBuff, 230);
+    serializeJson(doc, locBuff, 250);
 
 
     // Open wireless connection if not already activated
