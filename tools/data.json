@@ -1,2 +1,1 @@
-{"nickname":"bosltestcms","upper_chameleon":{"pin_a_raw":1,"pin_b_raw":2,"raw_average":1.5,"resistance":15},"lower_chameleon":{"pin_a_raw":1,"pin_b_raw":2,"raw_average":1.5,"resistance":15},"upper_temperature":{"temperature":22},"lower_temperature":{"temperature":22}}
-
+{"bosl_name":"CMS0","bosl_battery_mv":4200}

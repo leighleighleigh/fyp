@@ -21,14 +21,12 @@ Adafruit_FONA_LTE fona = Adafruit_FONA_LTE();
 char imei[16] = {0};
 uint8_t fonaType;
 
-DynamicJsonDocument doc(1024);
-
-// Method 'headers'
 bool netStatus();
 void moduleSetup();
 
 void setupFONA()
 {
+
     fona.powerOn(FONA_PWRKEY);
     moduleSetup();
 
@@ -37,18 +35,24 @@ void setupFONA()
     // fona.setNetworkSettings(F("mdata.net.au"));
     fona.setNetworkSettings(F("mdata.net.au"));
 
-    // turn GPRS off
-    // if (!fona.enableGPRS(false))
+    // // turn GPRS off
+    // for(int i = 0; i<5; i++)
+    // {
+    // if(!fona.enableGPRS(false))
     // {
     //     Serial.println(F("Failed to turn off GPRS..."));
     //     delay(2000);
     // }
+    // }
 
-    // turn GPRS on
-    // if (!fona.enableGPRS(true))
+    // // turn GPRS on
+    // for(int i = 0; i<5; i++)
+    // {
+    // if(!fona.enableGPRS(true))
     // {
     //     Serial.println(F("Failed to turn on GPRS..."));
     //     delay(2000);
+    // }
     // }
 
     // Connect to cell network and verify connection
@@ -56,58 +60,38 @@ void setupFONA()
     while (!netStatus())
     {
         Serial.println(F("Failed to connect to cell network, retrying..."));
-        delay(2000); // Retry every 2s
+        delay(5000); // Retry every 2s
     }
     Serial.println(F("Connected to cell network!"));
 }
 
-// void readGPStoJSON(JsonObject &gps_obj)
-// {
-//     // Get a fix on location, try every 2s
-//     // Use the top line if you want to parse UTC time data as well, the line below it if you don't care
-//     //  while (!fona.getGPS(&latitude, &longitude, &speed_kph, &heading, &altitude, &year, &month, &day, &hour, &minute, &second)) {
-//     if (!fona.getGPS(&latitude, &longitude, &speed_kph, &heading, &altitude))
-//     {
-//         Serial.println(F("Failed to get GPS location..."));
-//     }
-
-//     // Store the results nicely into a JSON document
-//     gps_obj["lat"] = latitude;
-//     gps_obj["lon"] = longitude;
-//     gps_obj["ele"] = altitude;
-//     // gps_obj["lat"] = -37.78;
-//     // gps_obj["lon"] = 144.944;
-//     // gps_obj["ele"] = 10.0;
-// }
-
 void loopFONA()
 {
-    // The json document variable
-    JsonObject root = doc.to<JsonObject>();
+    uint16_t vbatt;
+    fona.getBattVoltage(&vbatt);
 
-    JsonObject deviceObject = root.createNestedObject("device");
-    uint16_t vBatt;
-    deviceObject["nickname"] = "BW3";
-    deviceObject["battery_mv"] = vBatt;
-    deviceObject["IMEI"] = String(imei);
-    deviceObject["uptime"] = float(millis() / 1000);
+    // Where we build the JSON sensor data
+    DynamicJsonDocument doc(255);
 
-    JsonObject upperChameleon = root.createNestedObject("upper_chameleon");
-    upperChameleon["pin_a_raw"] = 200;
-    upperChameleon["pin_b_raw"] = 300;
-    upperChameleon["raw_average"] = 250;
-    upperChameleon["resistance"] = 6000;
+    doc["bosl_name"] = "BW3";
+    doc["bosl_imei"] = String(imei);
+    doc["bosl_battery_mv"] = vbatt;
 
-    JsonObject lowerChameleon = root.createNestedObject("lower_chameleon");
-    lowerChameleon["pin_a_raw"] = 200;
-    lowerChameleon["pin_b_raw"] = 300;
-    lowerChameleon["raw_average"] = 250;
-    lowerChameleon["resistance"] = 6000;
+    // Top sensors
+    doc["chmln_top_raw_a"] = 300;
+    doc["chmln_top_raw_b"] = 250;
+    doc["chmln_top_raw_avg"] = 6000;
+    doc["chmln_top_resistance"] = 200;
+    doc["smt100_top_vwc"] = 10.5;
+    doc["smt100_top_temperature"] = 24;
 
-    JsonObject upperTemp = root.createNestedObject("upper_temperature");
-    upperTemp["temperature"] = 22;
-    JsonObject lowerTemp = root.createNestedObject("lower_temperature");
-    lowerTemp["temperature"] = 22;
+    // Bottom sensors
+    doc["chmln_bot_raw_a"] = 300;
+    doc["chmln_bot_raw_b"] = 250;
+    doc["chmln_bot_raw_avg"] = 6000;
+    doc["chmln_bot_resistance"] = 22;
+
+    doc["ds18b20_bot_temperature"] = 22;
 
     // Open wireless connection if not already activated
     if (!fona.wirelessConnStatus())
@@ -124,19 +108,32 @@ void loopFONA()
         Serial.println(F("Data already enabled!"));
     }
 
-    // Post data to website
-    uint16_t statuscode;
-    int16_t length;
-    char data[250];
 
-    serializeJson(doc, data);
-
-    if (!fona.HTTP_POST_start(DIRECTUS_FLOW_URL, F("application/json"), (uint8_t *)data, strlen(data), &statuscode, (uint16_t *)&length))
-    {
-        Serial.println("Failed!");
+    // Add headers as needed
+    fona.HTTP_addHeader("User-Agent", "SIM7000G", 7);
+    fona.HTTP_addHeader("Cache-control", "no-cache", 8);
+    fona.HTTP_addHeader("Connection", "keep-alive", 10);
+    
+    // Connect to server
+    // If https:// is used, #define SSL_FONA 1 in Adafruit_FONA.h
+    if (! fona.HTTP_connect("http://cms.leigh.sh")) {
+        Serial.println(F("Failed to connect to server..."));
+        return;
     }
-    Serial.println(F("\n****"));
-    fona.HTTP_POST_end();
+
+    // // GET request
+    // // Format URI with GET request query string
+    // sprintf(URL, "/dweet/for/%s?temp=%s&batt=%i", imei, tempBuff, battLevel);
+    // fona.HTTP_GET(URL);
+    char URL[150];
+    char body[512];
+    // POST request
+    sprintf(URL, "%s", DIRECTUS_FLOW_URL); // Format URI
+    // Format JSON body for POST request
+    serializeJson(doc, body);
+    fona.HTTP_addHeader("Content-Type", "application/json", 16);
+    fona.HTTP_addHeader("Authorization", "Bearer PXzLIINzWiEsd13j0eMloz2QbtB7LzAs", 48);
+    fona.HTTP_POST(URL, body, strlen(body));
 }
 
 void moduleSetup()
