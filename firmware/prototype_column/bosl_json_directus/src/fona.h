@@ -14,12 +14,13 @@
 SoftwareSerial fonaSerial = SoftwareSerial(FONA_TX, FONA_RX);
 Adafruit_FONA_LTE fona = Adafruit_FONA_LTE();
 
-#define DIRECTUS_FLOW_URL "https://***REMOVED***/flows/trigger/2f411e8c-ecdf-4b92-9d06-5bd4c2e9f98e"
+#define DIRECTUS_URL "http://***REMOVED***/items/column_sensors"
 #define DIRECTUS_TOKEN "PXzLIINzWiEsd13j0eMloz2QbtB7LzAs"
 
 /****************************** OTHER STUFF ***************************************/
 char imei[16] = {0};
 uint8_t fonaType;
+String body;
 
 bool netStatus();
 void moduleSetup();
@@ -70,8 +71,11 @@ void loopFONA()
     uint16_t vbatt;
     fona.getBattVoltage(&vbatt);
 
-    // Where we build the JSON sensor data
-    DynamicJsonDocument doc(255);
+    // Use arduinojson.org/v6/assistant to compute the capacity.
+    const size_t capacity = 250;
+    Serial.print("JSON capacity: ");
+    Serial.println(capacity);
+    DynamicJsonDocument doc(capacity);
 
     doc["bosl_name"] = "BW3";
     doc["bosl_imei"] = String(imei);
@@ -109,31 +113,27 @@ void loopFONA()
     }
 
 
-    // Add headers as needed
-    fona.HTTP_addHeader("User-Agent", "SIM7000G", 7);
-    fona.HTTP_addHeader("Cache-control", "no-cache", 8);
-    fona.HTTP_addHeader("Connection", "keep-alive", 10);
-    
-    // Connect to server
-    // If https:// is used, #define SSL_FONA 1 in Adafruit_FONA.h
-    if (! fona.HTTP_connect("http://***REMOVED***")) {
-        Serial.println(F("Failed to connect to server..."));
-        return;
-    }
+    char URL[64];
+    char TOKENSTR[64];
+    // String body;
+    size_t bodylen;
 
-    // // GET request
-    // // Format URI with GET request query string
-    // sprintf(URL, "/dweet/for/%s?temp=%s&batt=%i", imei, tempBuff, battLevel);
-    // fona.HTTP_GET(URL);
-    char URL[150];
-    char body[512];
-    // POST request
-    sprintf(URL, "%s", DIRECTUS_FLOW_URL); // Format URI
+    sprintf(TOKENSTR, "%s", DIRECTUS_TOKEN); 
+    sprintf(URL, "%s", DIRECTUS_URL); 
+
     // Format JSON body for POST request
+    body = "";
+    body.reserve(400);
     serializeJson(doc, body);
-    fona.HTTP_addHeader("Content-Type", "application/json", 16);
-    fona.HTTP_addHeader("Authorization", "Bearer PXzLIINzWiEsd13j0eMloz2QbtB7LzAs", 48);
-    fona.HTTP_POST(URL, body, strlen(body));
+    bodylen = strlen(body.c_str());
+    
+    // serializeJson(doc, Serial);
+    Serial.print(bodylen);
+    Serial.println();
+    Serial.print(body);
+    Serial.println();
+    
+    fona.postData("POST", URL, body.c_str(), TOKENSTR);
 }
 
 void moduleSetup()
