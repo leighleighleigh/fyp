@@ -2,7 +2,8 @@
 #include "Adafruit_FONA.h" // https://github.com/botletics/SIM7000-LTE-Shield/tree/master/Code
 // #include "Adafruit_MQTT.h"
 // #include "Adafruit_MQTT_FONA.h"
-#include "ArduinoJson.h"
+// #include "ArduinoJson.h"
+#include <schema.h>
 #include <SoftwareSerial.h>
 
 #define SIMCOM_7000
@@ -36,26 +37,6 @@ void setupFONA()
     // fona.setNetworkSettings(F("mdata.net.au"));
     fona.setNetworkSettings(F("mdata.net.au"));
 
-    // // turn GPRS off
-    // for(int i = 0; i<5; i++)
-    // {
-    // if(!fona.enableGPRS(false))
-    // {
-    //     Serial.println(F("Failed to turn off GPRS..."));
-    //     delay(2000);
-    // }
-    // }
-
-    // // turn GPRS on
-    // for(int i = 0; i<5; i++)
-    // {
-    // if(!fona.enableGPRS(true))
-    // {
-    //     Serial.println(F("Failed to turn on GPRS..."));
-    //     delay(2000);
-    // }
-    // }
-
     // Connect to cell network and verify connection
     // If unsuccessful, keep retrying every 2s until a connection is made
     while (!netStatus())
@@ -70,32 +51,28 @@ void loopFONA()
 {
     uint16_t vbatt;
     fona.getBattVoltage(&vbatt);
+    char body[512];
 
-    // Use arduinojson.org/v6/assistant to compute the capacity.
-    const size_t capacity = 250;
-    Serial.print("JSON capacity: ");
-    Serial.println(capacity);
-    DynamicJsonDocument doc(capacity);
+    sprintf(body, column_data_schema, "BW3", String(imei), vbatt, String(""), 1,2,3,4,5,6,7,8,9,10,11,12,13,14);
+    // doc["bosl_name"] = "BW3";
+    // doc["bosl_imei"] = String(imei);
+    // doc["bosl_battery_mv"] = vbatt;
 
-    doc["bosl_name"] = "BW3";
-    doc["bosl_imei"] = String(imei);
-    doc["bosl_battery_mv"] = vbatt;
+    // // Top sensors
+    // doc["chmln_top_raw_a"] = 300;
+    // doc["chmln_top_raw_b"] = 250;
+    // doc["chmln_top_raw_avg"] = 6000;
+    // doc["chmln_top_resistance"] = 200;
+    // doc["smt100_top_vwc"] = 10.5;
+    // doc["smt100_top_temperature"] = 24;
 
-    // Top sensors
-    doc["chmln_top_raw_a"] = 300;
-    doc["chmln_top_raw_b"] = 250;
-    doc["chmln_top_raw_avg"] = 6000;
-    doc["chmln_top_resistance"] = 200;
-    doc["smt100_top_vwc"] = 10.5;
-    doc["smt100_top_temperature"] = 24;
+    // // Bottom sensors
+    // doc["chmln_bot_raw_a"] = 300;
+    // doc["chmln_bot_raw_b"] = 250;
+    // doc["chmln_bot_raw_avg"] = 6000;
+    // doc["chmln_bot_resistance"] = 22;
 
-    // Bottom sensors
-    doc["chmln_bot_raw_a"] = 300;
-    doc["chmln_bot_raw_b"] = 250;
-    doc["chmln_bot_raw_avg"] = 6000;
-    doc["chmln_bot_resistance"] = 22;
-
-    doc["ds18b20_bot_temperature"] = 22;
+    // doc["ds18b20_bot_temperature"] = 22;
 
     // Open wireless connection if not already activated
     if (!fona.wirelessConnStatus())
@@ -115,25 +92,17 @@ void loopFONA()
 
     char URL[64];
     char TOKENSTR[64];
-    // String body;
-    size_t bodylen;
 
     sprintf(TOKENSTR, "%s", DIRECTUS_TOKEN); 
     sprintf(URL, "%s", DIRECTUS_URL); 
 
-    // Format JSON body for POST request
-    body = "";
-    body.reserve(400);
-    serializeJson(doc, body);
-    bodylen = strlen(body.c_str());
-    
     // serializeJson(doc, Serial);
-    Serial.print(bodylen);
+    Serial.print(strlen(body));
     Serial.println();
     Serial.print(body);
     Serial.println();
     
-    fona.postData("POST", URL, body.c_str(), TOKENSTR);
+    fona.postData("POST", URL, body, TOKENSTR);
 }
 
 void moduleSetup()

@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <ArduinoJson.h>
+// #include <ArduinoJson.h>
 #include "fona.h"
 
 void setup()
