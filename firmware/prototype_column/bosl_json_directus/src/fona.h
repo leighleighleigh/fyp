@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#define SSL_FONA 1
 #include "Adafruit_FONA.h" // https://github.com/botletics/SIM7000-LTE-Shield/tree/master/Code
 // #include "Adafruit_MQTT.h"
 // #include "Adafruit_MQTT_FONA.h"
@@ -15,7 +16,8 @@
 SoftwareSerial fonaSerial = SoftwareSerial(FONA_TX, FONA_RX);
 Adafruit_FONA_LTE fona = Adafruit_FONA_LTE();
 
-#define DIRECTUS_URL "http://cms.leigh.sh/items/column_sensors"
+// #define DIRECTUS_URL "http://cms.leigh.sh/items/column_sensors"
+#define DIRECTUS_URL "https://cms.leigh.sh/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f"
 #define DIRECTUS_TOKEN "PXzLIINzWiEsd13j0eMloz2QbtB7LzAs"
 
 /****************************** OTHER STUFF ***************************************/
@@ -52,10 +54,10 @@ void loopFONA()
 {
     uint16_t vbatt;
     fona.getBattVoltage(&vbatt);
-    char body[512];
-    
-    sprintf(body, column_data_schema, "BW3", (char *)imei, vbatt, "time", 1,2,"3.123",4,5,6,"7.123",8,"9.1","9.2","9.3","9.4","9.5","9.6");
-    // sprintf(body, column_data_schema, "BW3", (char * )imei, vbatt);
+    char body[100];
+    // sprintf(body, "%s", "{\"bosl_name\":\"BW3\"}"));
+    // sprintf(body, column_data_schema, "BW3", (char *)imei, vbatt, "time", 1,2,"3.123",4,5,6,"7.123",8,"9.1","9.2","9.3","9.4","9.5","9.6");
+    sprintf(body, column_data_schema, "BW3", (char * )imei, vbatt);
     // doc["bosl_name"] = "BW3";
     // doc["bosl_imei"] = String(imei);
     // doc["bosl_battery_mv"] = vbatt;
@@ -92,7 +94,7 @@ void loopFONA()
     }
 
 
-    char URL[64];
+    char URL[150];
     char TOKENSTR[64];
 
     sprintf(TOKENSTR, "%s", DIRECTUS_TOKEN); 
@@ -105,8 +107,23 @@ void loopFONA()
     Serial.println("body: ");
     Serial.print(body);
     Serial.println();
-    
-    // fona.postData("POST", URL, body, TOKENSTR);
+
+    fona.addRootCA(root_ca);
+    fona.HTTP_ssl(true);
+    // if (! fona.HTTP_connect("https://cms.leigh.sh")) {
+        // Serial.println(F("Failed to connect to server..."));
+        // return;
+    // } 
+
+    // sprintf(URL, "%s", "/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f"); // Format URI
+
+    // Format JSON body for POST request
+    // Example JSON body: "{\"temp\":\"22.3\",\"batt\":\"3800\"}"
+    // fona.HTTP_addHeader("Content-Type", "application/json", 16);
+    // fona.HTTP_addHeader("Authorization", "Bearer PXzLIINzWiEsd13j0eMloz2QbtB7LzAs", 48);
+    // fona.HTTP_POST(URL, body, strlen(body));
+    fona.postData("POST", URL, body, TOKENSTR);
+
 }
 
 void moduleSetup()
