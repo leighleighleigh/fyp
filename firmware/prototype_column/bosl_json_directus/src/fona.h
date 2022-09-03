@@ -36,6 +36,7 @@ void setupFONA()
 
     // fona.setNetworkSettings(F("mdata.net.au"));
     fona.setNetworkSettings(F("mdata.net.au"));
+    fona.setHTTPSRedirect(true);
 
     // Connect to cell network and verify connection
     // If unsuccessful, keep retrying every 2s until a connection is made
@@ -52,8 +53,9 @@ void loopFONA()
     uint16_t vbatt;
     fona.getBattVoltage(&vbatt);
     char body[512];
-
-    sprintf(body, column_data_schema, "BW3", String(imei), vbatt, String(""), 1,2,3,4,5,6,7,8,9,10,11,12,13,14);
+    
+    sprintf(body, column_data_schema, "BW3", (char *)imei, vbatt, "time", 1,2,"3.123",4,5,6,"7.123",8,"9.1","9.2","9.3","9.4","9.5","9.6");
+    // sprintf(body, column_data_schema, "BW3", (char * )imei, vbatt);
     // doc["bosl_name"] = "BW3";
     // doc["bosl_imei"] = String(imei);
     // doc["bosl_battery_mv"] = vbatt;
@@ -97,12 +99,14 @@ void loopFONA()
     sprintf(URL, "%s", DIRECTUS_URL); 
 
     // serializeJson(doc, Serial);
+    Serial.print("body length: ");
     Serial.print(strlen(body));
     Serial.println();
+    Serial.println("body: ");
     Serial.print(body);
     Serial.println();
     
-    fona.postData("POST", URL, body, TOKENSTR);
+    // fona.postData("POST", URL, body, TOKENSTR);
 }
 
 void moduleSetup()
