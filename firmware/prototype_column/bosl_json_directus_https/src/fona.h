@@ -8,11 +8,6 @@
 #define TINY_GSM_RX_BUFFER 650
 #endif
 
-// Define how you're planning to connect to the internet.
-// This is only needed for this example, not in other code.
-#define TINY_GSM_USE_GPRS true
-#define TINY_GSM_USE_WIFI false
-
 // set GSM PIN, if any
 #define GSM_PIN ""
 
@@ -28,15 +23,11 @@ SoftwareSerial SerialAT(BOSL_RX, BOSL_TX); // RX, TX
 // This may be needed for a fast processor at a slow baud rate.
 // #define TINY_GSM_YIELD() { delay(2); }
 
-// Define how you're planning to connect to the internet.
-// This is only needed for this example, not in other code.
-#define TINY_GSM_USE_GPRS true
-
 // set GSM PIN, if any
 #define GSM_PIN ""
 
 // flag to force SSL client authentication, if needed
-#define TINY_GSM_SSL_CLIENT_AUTHENTICATION
+// #define TINY_GSM_SSL_CLIENT_AUTHENTICATION
 
 // Your GPRS credentials, if any
 const char apn[] = "mdata.net.au";
@@ -47,6 +38,8 @@ const char gprsPass[] = "";
 const char server[] = "mc.leigh.sh";
 const char resource[] = "/index.html";
 const int port = 443;
+// Get this fingerprint with the script in the tools folder!
+const char* fingerprint = "EB D0 96 C6 93 1F A3 8A E4 B1 D7 EE C5 A6 65 DE 10 17 6B F5";
 
 #include <TinyGsmClient.h>
 #include <ArduinoHttpClient.h>
@@ -135,6 +128,9 @@ void loopFONA()
     // Update time for proper SSL communications
     modem.NTPServerSync("pool.ntp.org",3U);
 
+    // Update SSL params
+    // client.setCertificate();
+
     // GPRS connection parameters are usually set after network registration
     SerialMon.print(F("Connecting to "));
     SerialMon.print(apn);
@@ -151,8 +147,12 @@ void loopFONA()
         SerialMon.println("GPRS connected");
     }
 
+
+
     SerialMon.print(F("Performing HTTPS GET request... "));
     http.connectionKeepAlive(); // Currently, this is needed for HTTPS
+    // http.sendHeader(F("Content-Type"), F("application/json"));
+
     int err = http.get(resource);
     if (err != 0)
     {
