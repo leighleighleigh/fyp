@@ -16,13 +16,13 @@
 // set GSM PIN, if any
 #define GSM_PIN ""
 
-#define FONA_PWRKEY 4
-#define FONA_DTR 5 // Connect with solder jumper
-#define FONA_TX 9  // Microcontroller RX
-#define FONA_RX 8  // Microcontroller TX
+#define SIM_PWRKEY 4
+#define SIM_DTR 5 // Connect with solder jumper
+#define BOSL_RX 9  // Microcontroller RX
+#define BOSL_TX 8  // Microcontroller TX
 
 #define SerialMon Serial
-SoftwareSerial SerialAT(FONA_RX, FONA_TX); // RX, TX
+SoftwareSerial SerialAT(BOSL_RX, BOSL_TX); // RX, TX
 
 // Add a reception delay, if needed.
 // This may be needed for a fast processor at a slow baud rate.
@@ -55,6 +55,32 @@ TinyGsm modem(SerialAT);
 TinyGsmClientSecure client(modem);
 HttpClient http(client, server, port);
 
+void simOn()
+{
+    // powers on SIM7000
+    // do check for if sim is on
+    pinMode(SIM_PWRKEY, OUTPUT);
+    pinMode(BOSL_TX, OUTPUT);
+    digitalWrite(BOSL_TX, HIGH);
+    pinMode(BOSL_RX, INPUT_PULLUP);
+    digitalWrite(SIM_PWRKEY, LOW);
+    delay(1000); // For SIM7000
+    digitalWrite(SIM_PWRKEY, HIGH);
+    delay(4000);
+}
+
+void simOff()
+{
+    // powers off SIM7000
+    //  TX / RX pins off to save power
+    digitalWrite(BOSL_TX, LOW);
+    digitalWrite(BOSL_RX, LOW);
+    digitalWrite(SIM_PWRKEY, LOW);
+    delay(1200); // For SIM7000
+    digitalWrite(SIM_PWRKEY, HIGH);
+    delay(2000);
+}
+
 void setupFONA()
 {
     // Set console baud rate
@@ -65,17 +91,19 @@ void setupFONA()
     // Set your reset, enable, power pins here
     // !!!!!!!!!!!
 
+    simOff();
     SerialMon.println("Wait...");
 
     // Set GSM module baud rate
     SerialAT.begin(9600);
+    simOn();
     delay(6000);
 
     // Restart takes quite some time
     // To skip it, call init() instead of restart()
     SerialMon.println("Initializing modem...");
-    //   modem.restart();
-    modem.init();
+    modem.restart();
+    // modem.init();
 
     String modemInfo = modem.getModemInfo();
     SerialMon.print("Modem Info: ");
@@ -103,6 +131,9 @@ void loopFONA()
     {
         SerialMon.println("Network connected");
     }
+
+    // Update time for proper SSL communications
+    modem.NTPServerSync("pool.ntp.org",3U);
 
     // GPRS connection parameters are usually set after network registration
     SerialMon.print(F("Connecting to "));
@@ -178,7 +209,7 @@ void loopFONA()
         delay(1000);
     }
 }
-// SoftwareSerial fonaSerial = SoftwareSerial(FONA_TX, FONA_RX);
+// SoftwareSerial fonaSerial = SoftwareSerial(BOSL_RX, BOSL_TX);
 // Adafruit_FONA_LTE fona = Adafruit_FONA_LTE();
 
 // // #define DIRECTUS_URL "http://cms.leigh.sh/items/column_sensors"
@@ -196,7 +227,7 @@ void loopFONA()
 // void setupFONA()
 // {
 
-//     fona.powerOn(FONA_PWRKEY);
+//     fona.powerOn(SIM_PWRKEY);
 //     moduleSetup();
 
 //     fona.setFunctionality(1);
