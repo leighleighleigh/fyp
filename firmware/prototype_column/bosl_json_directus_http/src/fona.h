@@ -2,7 +2,8 @@
 #include <schema.h>
 #include <SoftwareSerial.h>
 
-#define TINY_GSM_MODEM_SIM7000SSL
+// #define TINY_GSM_MODEM_SIM7000SSL
+#define TINY_GSM_MODEM_SIM7000
 
 #if !defined(TINY_GSM_RX_BUFFER)
 #define TINY_GSM_RX_BUFFER 650
@@ -35,17 +36,16 @@ const char gprsUser[] = "";
 const char gprsPass[] = "";
 
 // Server details
-const char server[] = "mc.leigh.sh";
-const char resource[] = "/index.html";
-const int port = 443;
-// Get this fingerprint with the script in the tools folder!
-const char* fingerprint = "EB D0 96 C6 93 1F A3 8A E4 B1 D7 EE C5 A6 65 DE 10 17 6B F5";
+const char server[] = "***REMOVED***";
+const char resource[] = "/items/column_sensors";
+const int port = 80;
 
 #include <TinyGsmClient.h>
 #include <ArduinoHttpClient.h>
 
 TinyGsm modem(SerialAT);
-TinyGsmClientSecure client(modem);
+// TinyGsmClientSecure client(modem);
+TinyGsmClient client(modem);
 HttpClient http(client, server, port);
 
 void simOn()
@@ -130,6 +130,17 @@ void loopFONA()
 
     // Update SSL params
     // client.setCertificate();
+    // client.setCertificate(root_ca);
+    // Show certs
+    // modem.sendAT("+SHSSL=1","");
+    // modem.sendAT("+CFSINIT");
+    // modem.sendAT("+CFSTERM");
+    // AT('+CFSINIT')
+    // AT('+CFSGFIS=3,"{}"'.format(CA_NAME))
+    // AT('+CFSGFIS=3,"{}"'.format(CERT_NAME))
+    // AT('+CFSGFIS=3,"{}"'.format(KEY_NAME))
+    // AT('+CFSTERM')
+ 
 
     // GPRS connection parameters are usually set after network registration
     SerialMon.print(F("Connecting to "));
@@ -151,19 +162,24 @@ void loopFONA()
 
     SerialMon.print(F("Performing HTTPS GET request... "));
     http.connectionKeepAlive(); // Currently, this is needed for HTTPS
-    // http.sendHeader(F("Content-Type"), F("application/json"));
+    http.sendHeader(F("Authorization"),F("Bearer nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN"));
+    http.sendHeader(F("Content-Type"), F("application/json"));
 
     int err = http.get(resource);
     if (err != 0)
     {
-        SerialMon.println(F("failed to connect"));
+        SerialMon.println(F("failed to connect..."));
+        SerialMon.print("err: ");
+        SerialMon.println(err);
         delay(10000);
         return;
     }
 
+    // String responseBody = http.responseBody();
     int status = http.responseStatusCode();
     SerialMon.print(F("Response status code: "));
     SerialMon.println(status);
+    // SerialMon.println(responseBody);
     if (!status)
     {
         delay(10000);
