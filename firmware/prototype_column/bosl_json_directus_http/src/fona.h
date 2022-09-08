@@ -6,7 +6,7 @@
 #define TINY_GSM_MODEM_SIM7000
 
 #if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 650
+#define TINY_GSM_RX_BUFFER 400
 #endif
 
 // set GSM PIN, if any
@@ -14,10 +14,12 @@
 
 #define SIM_PWRKEY 4
 #define SIM_DTR 5 // Connect with solder jumper
-#define BOSL_RX 9  // Microcontroller RX
-#define BOSL_TX 8  // Microcontroller TX
+#define BOSL_RX 9 // Microcontroller RX
+#define BOSL_TX 8 // Microcontroller TX
 
+// #define DBG Serial.println
 #define SerialMon Serial
+#define TINY_GSM_DEBUG SerialMon
 SoftwareSerial SerialAT(BOSL_RX, BOSL_TX); // RX, TX
 
 // Add a reception delay, if needed.
@@ -37,14 +39,13 @@ const char gprsPass[] = "";
 
 // Server details
 const char server[] = "***REMOVED***";
-const char resource[] = "/items/column_sensors";
+const char resource[] = "/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
 const int port = 80;
 
 #include <TinyGsmClient.h>
 #include <ArduinoHttpClient.h>
 
 TinyGsm modem(SerialAT);
-// TinyGsmClientSecure client(modem);
 TinyGsmClient client(modem);
 HttpClient http(client, server, port);
 
@@ -74,10 +75,63 @@ void simOff()
     delay(2000);
 }
 
+void doHTTPPost()
+{
+    DBG(F("Performing HTTP POST request... "));
+    http.connectionKeepAlive(); // Currently, this is needed for HTTPS
+    http.sendHeader(F("Authorization"),F("Bearer nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN"));
+    http.sendHeader(F("Content-Type"), F("application/json"));
+    http.sendHeader(F("Accept"), F("application/json"));
+
+//   int err = http.get(resource);
+  int err = http.post(resource, F("application/json"), "{\"data\":\"1,2,3\"}");
+  if (err != 0) {
+    DBG(F("failed to connect"));
+    delay(10000);
+    return;
+  }
+
+  int status = http.responseStatusCode();
+  SerialMon.print(F("Response status code: "));
+  SerialMon.println(status);
+  if (!status) {
+    delay(10000);
+    return;
+  }
+
+  SerialMon.println(F("Response Headers:"));
+  if (http.headerAvailable()) {
+    String headerName  = http.readHeaderName();
+    String headerValue = http.readHeaderValue();
+    SerialMon.println("    " + headerName + " : " + headerValue);
+  }
+
+  int length = http.contentLength();
+  if (length >= 0) {
+    SerialMon.print(F("Content length is: "));
+    SerialMon.println(length);
+  }
+  if (http.isResponseChunked()) {
+    SerialMon.println(F("The response is chunked"));
+  }
+
+  String body = http.responseBody();
+  SerialMon.println(F("Response:"));
+  SerialMon.println(body);
+
+  SerialMon.print(F("Body length is: "));
+  SerialMon.println(body.length());
+
+  // Shutdown
+
+  http.stop();
+  SerialMon.println(F("Server disconnected"));
+}
+
 void setupFONA()
 {
     // Set console baud rate
-    SerialMon.begin(115200);
+    SerialMon.begin(9600);
     delay(10);
 
     // !!!!!!!!!!!
@@ -88,13 +142,14 @@ void setupFONA()
     SerialMon.println("Wait...");
 
     // Set GSM module baud rate
-    SerialAT.begin(9600);
     simOn();
     delay(6000);
 
     // Restart takes quite some time
     // To skip it, call init() instead of restart()
     SerialMon.println("Initializing modem...");
+    SerialAT.begin(9600);
+    modem.setBaud(9600);
     modem.restart();
     // modem.init();
 
@@ -126,7 +181,7 @@ void loopFONA()
     }
 
     // Update time for proper SSL communications
-    modem.NTPServerSync("pool.ntp.org",3U);
+    modem.NTPServerSync("pool.ntp.org", 3U);
 
     // Update SSL params
     // client.setCertificate();
@@ -140,7 +195,6 @@ void loopFONA()
     // AT('+CFSGFIS=3,"{}"'.format(CERT_NAME))
     // AT('+CFSGFIS=3,"{}"'.format(KEY_NAME))
     // AT('+CFSTERM')
- 
 
     // GPRS connection parameters are usually set after network registration
     SerialMon.print(F("Connecting to "));
@@ -158,64 +212,64 @@ void loopFONA()
         SerialMon.println("GPRS connected");
     }
 
+    // SerialMon.print(F("Performing HTTPS GET request... "));
+    // http.connectionKeepAlive(); // Currently, this is needed for HTTPS
+    // // http.sendHeader(F("Authorization"),F("Bearer nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN"));
+    // // http.sendHeader(F("Content-Type"), F("application/json"));
+    // http.sendHeader(F("Accept"), F("application/json"));
 
+    // int err = http.get(resource);
+    // if (err != 0)
+    // {
+    //     SerialMon.println(F("failed to connect..."));
+    //     SerialMon.print("err: ");
+    //     SerialMon.println(err);
+    //     delay(10000);
+    //     return;
+    // }
 
-    SerialMon.print(F("Performing HTTPS GET request... "));
-    http.connectionKeepAlive(); // Currently, this is needed for HTTPS
-    http.sendHeader(F("Authorization"),F("Bearer nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN"));
-    http.sendHeader(F("Content-Type"), F("application/json"));
+    // // String responseBody = http.responseBody();
+    // int status = http.responseStatusCode();
+    // SerialMon.print(F("Response status code: "));
+    // SerialMon.println(status);
+    // // SerialMon.println(responseBody);
+    // if (!status)
+    // {
+    //     delay(10000);
+    //     return;
+    // }
 
-    int err = http.get(resource);
-    if (err != 0)
-    {
-        SerialMon.println(F("failed to connect..."));
-        SerialMon.print("err: ");
-        SerialMon.println(err);
-        delay(10000);
-        return;
-    }
+    // SerialMon.println(F("Response Headers:"));
+    // while (http.headerAvailable())
+    // {
+    //     String headerName = http.readHeaderName();
+    //     String headerValue = http.readHeaderValue();
+    //     SerialMon.println("    " + headerName + " : " + headerValue);
+    // }
 
-    // String responseBody = http.responseBody();
-    int status = http.responseStatusCode();
-    SerialMon.print(F("Response status code: "));
-    SerialMon.println(status);
-    // SerialMon.println(responseBody);
-    if (!status)
-    {
-        delay(10000);
-        return;
-    }
+    // int length = http.contentLength();
+    // if (length >= 0)
+    // {
+    //     SerialMon.print(F("Content length is: "));
+    //     SerialMon.println(length);
+    // }
+    // if (http.isResponseChunked())
+    // {
+    //     SerialMon.println(F("The response is chunked"));
+    // }
 
-    SerialMon.println(F("Response Headers:"));
-    while (http.headerAvailable())
-    {
-        String headerName = http.readHeaderName();
-        String headerValue = http.readHeaderValue();
-        SerialMon.println("    " + headerName + " : " + headerValue);
-    }
+    // String body = http.responseBody();
+    // SerialMon.println(F("Response:"));
+    // SerialMon.println(body);
 
-    int length = http.contentLength();
-    if (length >= 0)
-    {
-        SerialMon.print(F("Content length is: "));
-        SerialMon.println(length);
-    }
-    if (http.isResponseChunked())
-    {
-        SerialMon.println(F("The response is chunked"));
-    }
+    // SerialMon.print(F("Body length is: "));
+    // SerialMon.println(body.length());
 
-    String body = http.responseBody();
-    SerialMon.println(F("Response:"));
-    SerialMon.println(body);
+    // // Shutdown
 
-    SerialMon.print(F("Body length is: "));
-    SerialMon.println(body.length());
-
-    // Shutdown
-
-    http.stop();
-    SerialMon.println(F("Server disconnected"));
+    // http.stop();
+    // SerialMon.println(F("Server disconnected"));
+    doHTTPPost();
 
     modem.gprsDisconnect();
 
