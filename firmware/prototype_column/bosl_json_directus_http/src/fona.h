@@ -9,6 +9,8 @@
 #define TINY_GSM_RX_BUFFER 650
 #endif
 
+#define LOGGING
+
 // set GSM PIN, if any
 #define GSM_PIN ""
 
@@ -36,8 +38,11 @@ const char gprsUser[] = "";
 const char gprsPass[] = "";
 
 // Server details
-const char server[] = "cms.leigh.sh";
-const char resource[] = "/items/column_sensors";
+// const char server[] = "cms.leigh.sh";
+// const char resource[] = "/items/column_sensors?limit=1";
+const char server[]   = "vsh.pp.ua";
+const char resource[] = "/TinyGSM/logo.txt";
+
 const int port = 80;
 
 #include <TinyGsmClient.h>
@@ -45,7 +50,8 @@ const int port = 80;
 
 TinyGsm modem(SerialAT);
 // TinyGsmClientSecure client(modem);
-TinyGsmClient client(modem);
+// TinyGsmClient client(modem);
+TinyGsmClient client(modem,1);
 HttpClient http(client, server, port);
 
 void simOn()
@@ -77,7 +83,7 @@ void simOff()
 void setupFONA()
 {
     // Set console baud rate
-    SerialMon.begin(115200);
+    SerialMon.begin(9600);
     delay(10);
 
     // !!!!!!!!!!!
@@ -90,7 +96,7 @@ void setupFONA()
     // Set GSM module baud rate
     SerialAT.begin(9600);
     simOn();
-    delay(6000);
+    delay(2000);
 
     // Restart takes quite some time
     // To skip it, call init() instead of restart()
@@ -109,61 +115,14 @@ void setupFONA()
     }
 }
 
-void loopFONA()
+void getHTTP()
 {
-    SerialMon.print("Waiting for network...");
-    if (!modem.waitForNetwork())
-    {
-        SerialMon.println(" fail");
-        delay(10000);
-        return;
-    }
-    SerialMon.println(" success");
-
-    if (modem.isNetworkConnected())
-    {
-        SerialMon.println("Network connected");
-    }
-
-    // Update time for proper SSL communications
-    modem.NTPServerSync("pool.ntp.org",3U);
-
-    // Update SSL params
-    // client.setCertificate();
-    // client.setCertificate(root_ca);
-    // Show certs
-    // modem.sendAT("+SHSSL=1","");
-    // modem.sendAT("+CFSINIT");
-    // modem.sendAT("+CFSTERM");
-    // AT('+CFSINIT')
-    // AT('+CFSGFIS=3,"{}"'.format(CA_NAME))
-    // AT('+CFSGFIS=3,"{}"'.format(CERT_NAME))
-    // AT('+CFSGFIS=3,"{}"'.format(KEY_NAME))
-    // AT('+CFSTERM')
- 
-
-    // GPRS connection parameters are usually set after network registration
-    SerialMon.print(F("Connecting to "));
-    SerialMon.print(apn);
-    if (!modem.gprsConnect(apn, gprsUser, gprsPass))
-    {
-        SerialMon.println(" fail");
-        delay(10000);
-        return;
-    }
-    SerialMon.println(" success");
-
-    if (modem.isGprsConnected())
-    {
-        SerialMon.println("GPRS connected");
-    }
-
-
 
     SerialMon.print(F("Performing HTTPS GET request... "));
     http.connectionKeepAlive(); // Currently, this is needed for HTTPS
-    http.sendHeader(F("Authorization"),F("Bearer nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN"));
-    http.sendHeader(F("Content-Type"), F("application/json"));
+    // http.sendHeader(F("Authorization"),F("Bearer nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN"));
+    // http.sendHeader(F("Content-Type"), F("application/json"));
+    http.sendHeader(F("Accept"), F("application/json"));
 
     int err = http.get(resource);
     if (err != 0)
@@ -171,15 +130,14 @@ void loopFONA()
         SerialMon.println(F("failed to connect..."));
         SerialMon.print("err: ");
         SerialMon.println(err);
-        delay(10000);
+        delay(1000);
+        SerialMon.println(F("retrying..."));
         return;
     }
 
-    // String responseBody = http.responseBody();
     int status = http.responseStatusCode();
     SerialMon.print(F("Response status code: "));
     SerialMon.println(status);
-    // SerialMon.println(responseBody);
     if (!status)
     {
         delay(10000);
@@ -213,9 +171,54 @@ void loopFONA()
     SerialMon.println(body.length());
 
     // Shutdown
-
     http.stop();
     SerialMon.println(F("Server disconnected"));
+
+}
+
+void loopFONA()
+{
+    SerialMon.print("Battery: ");
+    uint16_t vbat = modem.getBattVoltage();
+    Serial.println(vbat);
+
+    SerialMon.print("Waiting for network...");
+    if (!modem.waitForNetwork())
+    {
+        SerialMon.println(" fail");
+        delay(10000);
+        return;
+    }
+    SerialMon.println(" success");
+
+    if (modem.isNetworkConnected())
+    {
+        SerialMon.println("Network connected");
+    }
+
+    // Update time for proper SSL communications
+    modem.NTPServerSync("pool.ntp.org",3U);
+
+    // GPRS connection parameters are usually set after network registration
+    SerialMon.print(F("Connecting to "));
+    SerialMon.print(apn);
+    if (!modem.gprsConnect(apn, gprsUser, gprsPass))
+    {
+        SerialMon.println(" fail");
+        delay(10000);
+        return;
+    }
+    SerialMon.println(" success");
+
+    if (modem.isGprsConnected())
+    {
+        SerialMon.println("GPRS connected");
+    }
+
+    for(int i=0; i<5; i++)
+    {
+        getHTTP();
+    }
 
     modem.gprsDisconnect();
 
