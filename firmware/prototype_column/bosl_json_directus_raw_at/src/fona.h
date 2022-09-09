@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include "Adafruit_FONA.h" // https://github.com/botletics/SIM7000-LTE-Shield/tree/master/Code
-#include "ArduinoJson.h"
+// #include "ArduinoJson.h"
 #include <SoftwareSerial.h>
+// #include <RTClib.h>
 
 #define SIMCOM_7000
 #define FONA_PWRKEY 4
@@ -15,36 +16,60 @@ Adafruit_FONA_LTE fona = Adafruit_FONA_LTE();
 /****************************** OTHER STUFF ***************************************/
 char imei[16] = {0}; // Use this for device ID
 uint8_t type;
-float latitude, longitude, speed_kph, heading, altitude, second;
-uint16_t year;
 uint16_t vBatt;
-uint8_t month, day, hour, minute;
 
 // char PIN[5] = "1234"; // SIM card PIN
 
 // NOTE: Keep the buffer sizes as small as possible, espeially on
 // Arduino Uno which doesn't have much computing power to handle
 // large buffers. On Arduino Mega you shouldn't have to worry much.
-char timeBuff[32];
+// char dateTimeFormat[] = "YYMMDD-hh:mm:ss";
+char dateTimeFormat[] = "YYYY-MM-DD hh:mm:ss";
+
+char timeBuff[48];
+String bootDateTime;
+
 // Create char buffers for the floating point numbers for sprintf
 // Make sure these buffers are long enough for your request URL
-char URL[200];
-char body[200];
-char tempBuff[16];
+char URL[128];
+char body[128];
+
 
 bool netStatus();
 void moduleSetup();
 
+int replacechar(char *str, char orig, char rep)
+{
+    char *ix = str;
+    int n = 0;
+    while ((ix = strchr(ix, orig)) != NULL)
+    {
+        *ix++ = rep;
+        n++;
+    }
+    return n;
+}
+
 void setupFONA()
 {
+    // Serial.println("powerDown");
+    // fona.powerDown();
+    Serial.println("powerUp");
     fona.powerOn(FONA_PWRKEY);
     moduleSetup();
-    
+
     // All features
+    Serial.println("setFunc 0");
+    fona.setFunctionality(0);
+    delay(3000);
+    Serial.println("setFunc 1");
     fona.setFunctionality(1);
+    delay(3000);
 
     // fona.setNetworkSettings(F("mdata.net.au"));
+    Serial.println("set network");
     fona.setNetworkSettings(F("mdata.net.au"));
+    Serial.println("set NTP");
     fona.enableNTPTimeSync(true, F("pool.ntp.org"));
 
     // Perform first-time GPS/data setup if the shield is going to remain on,
@@ -79,6 +104,25 @@ void setupFONA()
         delay(2000); // Retry every 2s
     }
     Serial.println(F("Connected to cell network!"));
+
+    // READ TIME
+    fona.getTime(timeBuff,48);
+    // Replace quotes with spaces
+    replacechar(timeBuff,'\"',' ');
+
+    Serial.print("Network time: ");
+    Serial.println(timeBuff);
+    
+    // Clean the network time into DateTime format
+    String bt = String(timeBuff);
+    bt.replace('/','-');
+    bt.replace(',',' ');
+    unsigned int tsIndex = bt.indexOf('+');
+    String btc = bt.substring(0,tsIndex);
+    btc.trim();
+    bootDateTime = btc;
+    Serial.print("Cleaned boot time: ");
+    Serial.println(btc);
 }
 
 void sendPOST()
@@ -89,8 +133,7 @@ void sendPOST()
     // StaticJsonDocument<128> doc;
     // JsonObject root = doc.to<JsonObject>();
 
-    // fona.getBattVoltage(&vBatt);
-    // fona.getTime(timeBuff, 32);
+    fona.getBattVoltage(&vBatt);
 
     // Fill fields in order of appearance in table SCHEMA
     // root["bosl_name"] = String(AIO_BOARDNAME);
@@ -108,13 +151,14 @@ void sendPOST()
     // sprintf(URL, "http://dweet.io/dweet/for/%s", imei);
     // sprintf(body, "{\"temp\":%s,\"batt\":%i}", tempBuff, battLevel);
     // Put URL into URL
-    const char * token = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN"; 
+    const char *token = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
     // sprintf(URL, "http://demo.thingsboard.io/api/v1/%s/telemetry", token);
     sprintf(URL, "http://cms.leigh.sh/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f");
     // sprintf(URL, "http://cms.leigh.sh/items/column_sensors?access_token=%s",token);
 
     // First part of JSON data payload
-    sprintf(body, "{\"data\":\"BW3,3333333333,4000\"}");
+    // Double string escape is needed on the timeBuff entry
+    sprintf(body, "{\"data\":\"BW3,%s,%u,20%s\"}", imei, vBatt, bootDateTime.c_str());
 
     // // Turn JSON keys into CSV here
     // for (JsonPair kv : root) {
@@ -127,7 +171,7 @@ void sendPOST()
     // // Trailing JSON
     // sprintf(body, "\"}");
     int counter = 0;
-    
+
     while (counter < 3 && !fona.postData("POST", URL, body, token))
     {
         Serial.println(F("Failed to complete HTTP POST..."));

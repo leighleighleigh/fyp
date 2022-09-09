@@ -2,8 +2,12 @@
 #include <ArduinoJson.h>
 #include "chameleon.h"
 #include "smt.h"
+
+#define DEBUG Serial
+#include <utils.h>
+
 #include "fona.h"
-#include "sim.h"
+// #include "sim.h"
 
 // SMT100 analog inputs
 #define SMT_TMP A0
@@ -33,6 +37,6 @@ void loop()
 {
   // loopSIM();
   loopFONA();
-  // Delay so the sensor can settle 
-  delay(1000);
+  // Sleep for 60 seconds
+  delay(60000);
 }
