@@ -1,6 +1,6 @@
 # Prerequisites
 *.d
-**.pio
+**.pio/**
 
 # Compiled Object files
 *.slo
