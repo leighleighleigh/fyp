@@ -7,7 +7,6 @@
 #include <utils.h>
 
 #include "fona.h"
-// #include "sim.h"
 
 // SMT100 analog inputs
 #define SMT_TMP A0
