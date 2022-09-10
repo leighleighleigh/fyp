@@ -56,10 +56,13 @@ int replacechar(char *str, char orig, char rep)
     return n;
 }
 
-void setupFONA()
+void simOn();
+
+void setupFONA(bool storeBootTime)
 {
     // Serial.println("powerDown");
     // fona.powerDown();
+    simOn();
     Serial.println("powerUp");
     fona.powerOn(FONA_PWRKEY);
     moduleSetup();
@@ -111,6 +114,9 @@ void setupFONA()
     }
     Serial.println(F("Connected to cell network!"));
 
+    if(storeBootTime)
+    {
+
     // READ TIME
     fona.getTime(timeBuff,48);
     // Replace quotes with spaces
@@ -129,6 +135,7 @@ void setupFONA()
     bootDateTime = btc;
     Serial.print("Cleaned boot time: ");
     Serial.println(btc);
+}
 }
 
 void sendPOST()
@@ -238,6 +245,21 @@ void loopFONA()
     // Disconn
     // fona.MQTT_connect(false);
     // fona.openWirelessConnection(false);
+}
+
+void simOn()
+{
+    // powers on SIM7000
+
+    // do check for if sim is on
+    pinMode(FONA_PWRKEY, OUTPUT);
+    pinMode(FONA_RX, OUTPUT);
+    digitalWrite(FONA_RX, HIGH);
+    pinMode(FONA_TX, INPUT_PULLUP);
+    digitalWrite(FONA_PWRKEY, LOW);
+    delay(1000); // For SIM7000
+    digitalWrite(FONA_PWRKEY, HIGH);
+    delay(4000);
 }
 
 void simOff()
