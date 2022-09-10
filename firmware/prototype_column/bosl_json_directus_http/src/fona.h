@@ -31,8 +31,7 @@ String bootDateTime;
 
 // Create char buffers for the floating point numbers for sprintf
 // Make sure these buffers are long enough for your request URL
-char URL[128];
-char body[128];
+char body[140];
 
 // GLOBAL SENSOR READINGS
 unsigned int rawTemp, rawSoil;
@@ -64,7 +63,6 @@ void setupFONA()
 {
     // Serial.println("powerDown");
     // fona.powerDown();
-    simOn();
     Serial.println("powerUp");
     fona.powerOn(FONA_PWRKEY);
     moduleSetup();
@@ -146,6 +144,9 @@ void setupFONA()
     }
 }
 
+const char token[] = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
+const char URL[] = "http://cms.leigh.sh/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
+
 void sendPOST()
 {
     // Construct the appropriate URL's and body, depending on request type
@@ -172,9 +173,7 @@ void sendPOST()
     // sprintf(URL, "http://dweet.io/dweet/for/%s", imei);
     // sprintf(body, "{\"temp\":%s,\"batt\":%i}", tempBuff, battLevel);
     // Put URL into URL
-    const char *token = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
     // sprintf(URL, "http://demo.thingsboard.io/api/v1/%s/telemetry", token);
-    sprintf(URL, "http://cms.leigh.sh/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f");
     // sprintf(URL, "http://cms.leigh.sh/items/column_sensors?access_token=%s",token);
 
     // First part of JSON data payload
@@ -297,7 +296,7 @@ void moduleSetup()
     // When the module is on it should communicate right after pressing reset
 
     // Software serial:
-    fonaSerial.begin(9600); // Default SIM7000 shield baud rate
+    fonaSerial.begin(115200); // Default SIM7000 shield baud rate
 
     Serial.println(F("Configuring to 9600 baud"));
     fonaSerial.println("AT+IPR=9600"); // Set baud rate
@@ -310,7 +309,7 @@ void moduleSetup()
         return;
     }
 
-    fona.setBaudrate(9600);
+    // fona.setBaudrate(9600);
 
     type = fona.type();
     Serial.println(F("FONA is OK"));

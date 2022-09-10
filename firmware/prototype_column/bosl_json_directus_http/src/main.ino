@@ -3,6 +3,7 @@
 #include "chameleon.h"
 #include "smt.h"
 #include <LowPower.h>
+#include <avr/wdt.h>
 
 #define DEBUG Serial
 #include <utils.h>
@@ -21,8 +22,16 @@
 
 extern volatile unsigned long timer0_millis;
 
+void reboot() {
+  wdt_disable();
+  wdt_enable(WDTO_15MS);
+  while (1) {}
+}
+
 void setup()
 {
+  Serial.begin(115200);
+  Serial.println("BOOT!");
 }
 
 void Sleepy(uint16_t tsleep){ //Sleep Time in seconds
@@ -47,7 +56,6 @@ void Sleepy(uint16_t tsleep){ //Sleep Time in seconds
 
 void loop()
 {
-  Serial.begin(115200);
   simOff();
   simOn();
 
@@ -69,8 +77,10 @@ void loop()
   loopFONA();
 
   // Turn off sim
-  shutdownFONA();
+  // shutdownFONA();
 
-  // Sleep for 60 seconds
-  Sleepy(60);
+  // Sleep for 60 seconds in low-power mode
+  // Sleepy(60);
+  // reboot();
+  delay(10000);
 }
