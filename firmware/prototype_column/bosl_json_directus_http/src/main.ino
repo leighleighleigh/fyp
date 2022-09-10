@@ -23,15 +23,6 @@ extern volatile unsigned long timer0_millis;
 
 void setup()
 {
-  simOff();
-  simOn();
-
-  Serial.begin(115200);
-  pinMode(SMT_TMP,INPUT);
-  pinMode(SMT_SOIL,INPUT);
-  // Setup FONA
-  // setupSIM();
-  setupFONA(true);
 }
 
 void Sleepy(uint16_t tsleep){ //Sleep Time in seconds
@@ -56,12 +47,15 @@ void Sleepy(uint16_t tsleep){ //Sleep Time in seconds
 
 void loop()
 {
-  // Serial.begin(115200);
+  Serial.begin(115200);
+  simOff();
+  simOn();
+
   pinMode(SMT_TMP,INPUT);
   pinMode(SMT_SOIL,INPUT);
   // Setup FONA
   // setupSIM();
-  setupFONA(false);
+  setupFONA();
 
   // Read SMT100
   // Read using regular read method
