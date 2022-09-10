@@ -23,6 +23,9 @@ extern volatile unsigned long timer0_millis;
 
 void setup()
 {
+  simOff();
+  simOn();
+
   Serial.begin(115200);
   pinMode(SMT_TMP,INPUT);
   pinMode(SMT_SOIL,INPUT);

@@ -31,8 +31,8 @@ String bootDateTime;
 
 // Create char buffers for the floating point numbers for sprintf
 // Make sure these buffers are long enough for your request URL
-char URL[128];
-char body[128];
+char URL[100];
+char body[100];
 
 // GLOBAL SENSOR READINGS
 unsigned int rawTemp, rawSoil;
@@ -62,24 +62,24 @@ void setupFONA(bool storeBootTime)
 {
     // Serial.println("powerDown");
     // fona.powerDown();
-    simOn();
+    // simOn();
     Serial.println("powerUp");
     fona.powerOn(FONA_PWRKEY);
     moduleSetup();
 
     // All features
-    Serial.println("setFunc 0");
-    fona.setFunctionality(0);
-    delay(3000);
-    Serial.println("setFunc 1");
+    // Serial.println("setFunc 0");
+    // fona.setFunctionality(0);
+    // delay(3000);
+    // Serial.println("setFunc 1");
     fona.setFunctionality(1);
-    delay(3000);
+    // delay(3000);
 
     // fona.setNetworkSettings(F("mdata.net.au"));
     Serial.println("set network");
     fona.setNetworkSettings(F("mdata.net.au"));
-    Serial.println("set NTP");
-    fona.enableNTPTimeSync(true, F("pool.ntp.org"));
+    // Serial.println("set NTP");
+    // fona.enableNTPTimeSync(true, F("pool.ntp.org"));
 
     // Perform first-time GPS/data setup if the shield is going to remain on,
     // otherwise these won't be enabled in loop() and it won't work!
@@ -92,17 +92,23 @@ void setupFONA(bool storeBootTime)
     // Serial.println(F("Turned on GPS!"));
 
     // turn GPRS off
-    if (!fona.enableGPRS(false))
+    for (int i = 0; i < 10; i++)
     {
-        Serial.println(F("Failed to turn off GPRS..."));
-        delay(2000);
+        if (!fona.enableGPRS(false))
+        {
+            Serial.println(F("Failed to turn off GPRS..."));
+            delay(2000);
+        }
     }
 
     // turn GPRS on
-    if (!fona.enableGPRS(true))
+    for (int i = 0; i < 10; i++)
     {
-        Serial.println(F("Failed to turn on GPRS..."));
-        delay(2000);
+        if (!fona.enableGPRS(true))
+        {
+            Serial.println(F("Failed to turn on GPRS..."));
+            delay(2000);
+        }
     }
 
     // Connect to cell network and verify connection
@@ -114,28 +120,28 @@ void setupFONA(bool storeBootTime)
     }
     Serial.println(F("Connected to cell network!"));
 
-    if(storeBootTime)
+    if (storeBootTime)
     {
 
-    // READ TIME
-    fona.getTime(timeBuff,48);
-    // Replace quotes with spaces
-    replacechar(timeBuff,'\"',' ');
+        // READ TIME
+        fona.getTime(timeBuff, 48);
+        // Replace quotes with spaces
+        replacechar(timeBuff, '\"', ' ');
 
-    Serial.print("Network time: ");
-    Serial.println(timeBuff);
-    
-    // Clean the network time into DateTime format
-    String bt = String(timeBuff);
-    bt.replace('/','-');
-    bt.replace(',',' ');
-    unsigned int tsIndex = bt.indexOf('+');
-    String btc = bt.substring(0,tsIndex);
-    btc.trim();
-    bootDateTime = btc;
-    Serial.print("Cleaned boot time: ");
-    Serial.println(btc);
-}
+        Serial.print("Network time: ");
+        Serial.println(timeBuff);
+
+        // Clean the network time into DateTime format
+        String bt = String(timeBuff);
+        bt.replace('/', '-');
+        bt.replace(',', ' ');
+        unsigned int tsIndex = bt.indexOf('+');
+        String btc = bt.substring(0, tsIndex);
+        btc.trim();
+        bootDateTime = btc;
+        Serial.print("Cleaned boot time: ");
+        Serial.println(btc);
+    }
 }
 
 void sendPOST()
@@ -171,7 +177,7 @@ void sendPOST()
 
     // First part of JSON data payload
     // Double string escape is needed on the timeBuff entry
-    sprintf(body, "{\"data\":\"BW3,%s,%u,20%s,%u,%u,%s,%u,%u,%u,%s,%u,0.0,0.0,%s,0.0,0.0,%s\"}", imei, vBatt, bootDateTime.c_str(),upper_rawA,upper_rawB,String(upper_rawAverage).c_str(),(uint16_t)upper_sensorResistance,lower_rawA,lower_rawB,String(lower_rawAverage).c_str(),(uint16_t)lower_sensorResistance,String(rawTemp).c_str(),String(rawSoil).c_str());
+    sprintf(body, "{\"data\":\"BW3,%s,%u,20%s,%u,%u,%s,%u,%u,%u,%s,%u,0.0,0.0,%s,0.0,0.0,%s\"}", imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(rawTemp).c_str(), String(rawSoil).c_str());
 
     // // Turn JSON keys into CSV here
     // for (JsonPair kv : root) {
@@ -253,9 +259,9 @@ void simOn()
 
     // do check for if sim is on
     pinMode(FONA_PWRKEY, OUTPUT);
-    pinMode(FONA_RX, OUTPUT);
-    digitalWrite(FONA_RX, HIGH);
-    pinMode(FONA_TX, INPUT_PULLUP);
+    // pinMode(FONA_RX, OUTPUT);
+    // digitalWrite(FONA_RX, HIGH);
+    // pinMode(FONA_TX, INPUT_PULLUP);
     digitalWrite(FONA_PWRKEY, LOW);
     delay(1000); // For SIM7000
     digitalWrite(FONA_PWRKEY, HIGH);
@@ -267,8 +273,8 @@ void simOff()
     // powers off SIM7000
 
     //  TX / RX pins off to save power
-    digitalWrite(FONA_RX, LOW);
-    digitalWrite(FONA_TX, LOW);
+    // digitalWrite(FONA_RX, LOW);
+    // digitalWrite(FONA_TX, LOW);
     digitalWrite(FONA_PWRKEY, LOW);
     delay(1200); // For SIM7000
     digitalWrite(FONA_PWRKEY, HIGH);
@@ -277,7 +283,8 @@ void simOff()
 
 void shutdownFONA()
 {
-    simOff();
+    // simOff();
+    fona.powerDown();
 }
 
 void moduleSetup()
@@ -287,7 +294,7 @@ void moduleSetup()
     // When the module is on it should communicate right after pressing reset
 
     // Software serial:
-    fonaSerial.begin(9600); // Default SIM7000 shield baud rate
+    fonaSerial.begin(115200); // Default SIM7000 shield baud rate
 
     Serial.println(F("Configuring to 9600 baud"));
     fonaSerial.println("AT+IPR=9600"); // Set baud rate
@@ -297,8 +304,7 @@ void moduleSetup()
     if (!fona.begin(fonaSerial))
     {
         Serial.println(F("Couldn't find FONA"));
-        while (1)
-            ; // Don't proceed if it couldn't find the device
+        return;
     }
 
     // fona.setBaudrate(9600);
