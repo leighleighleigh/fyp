@@ -66,12 +66,16 @@ boolean setupFONA()
 {
     Serial.println("powerUp");
     fona.powerOn(FONA_PWRKEY);
+    delay(6000);
 
     boolean foundModule = moduleSetup();
     if(!foundModule)
     {
         return false;
     }
+
+    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
+    // fona.sendCheckReply(F("AT&W0"),F("OK"),500);
 
     Serial.println("setFunc 0");
     fona.setFunctionality(0);
@@ -82,10 +86,14 @@ boolean setupFONA()
     delay(3000);
 
     // Serial.println("setFunc 6...");
-    fona.setFunctionality(6);
-    delay(10000);
+    // fona.setFunctionality(6);
+    // delay(10000);
 
-    fona.sendCheckReply(F("ATE0"),F("OK"),1000);
+    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
+    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
+
+    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
+    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
 
     fona.setFunctionality(1);
     delay(3000);
@@ -128,20 +136,25 @@ boolean setupFONA()
     // turn GPRS off
     // for (int i = 0; i < 3; i++)
     // {
-    if (!fona.enableGPRS(false))
-    {
-        Serial.println(F("Failed to turn off GPRS..."));
-        delay(2000);
-    }
+    // if (!fona.enableGPRS(false))
+    // {
+        // Serial.println(F("Failed to turn off GPRS..."));
+        // delay(2000);
+    // }
     // }
 
     // turn GPRS on
     // for (int i = 0; i < 3; i++)
     // {
-    if (!fona.enableGPRS(true))
+    while (!fona.enableGPRS(true))
     {
         Serial.println(F("Failed to turn on GPRS..."));
         delay(2000);
+        if (!fona.enableGPRS(false))
+        {
+            Serial.println(F("Failed to turn off GPRS..."));
+            delay(2000);
+        }
     }
     // }
 
@@ -302,20 +315,20 @@ void loopFONA()
 //     delay(4000);
 // }
 
-// void simOff()
-// {
-//     // powers off SIM7000
-//     digitalWrite(FONA_PWRKEY, LOW);
-//     delay(1200); // For SIM7000
-//     digitalWrite(FONA_PWRKEY, HIGH);
-//     delay(2000);
-// }
+void simOff()
+{
+    // powers off SIM7000
+    digitalWrite(FONA_PWRKEY, LOW);
+    delay(1200); // For SIM7000
+    digitalWrite(FONA_PWRKEY, HIGH);
+    delay(2000);
+}
 
 void shutdownFONA()
 {
     // Serial.println("Shutdown... (DISABLED)");
-    // simOff();
     fona.powerDown();
+    simOff();
     // fonaSerial.flush();
 }
 
