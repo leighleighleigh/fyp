@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <ArduinoJson.h>
+// #include <ArduinoJson.h>
 
 void readChameleon(int pinA, int pinB, unsigned int *rawA, unsigned int *rawB, float *rawAvg, float *sensorResistance)
 {
@@ -38,17 +38,17 @@ void readChameleon(int pinA, int pinB, unsigned int *rawA, unsigned int *rawB, f
 //   return rS * (1 + (tempC - 22) * 0.018);
 // }
 
-void readChameleonToJSON(int pinA, int pinB, JsonObject& sensor)
-{
-    // Read using regular read method
-    int rawA, rawB;
-    float rawAverage, sensorResistance;
-    readChameleon(pinA,pinB,&rawA,&rawB,&rawAverage,&sensorResistance);
+// void readChameleonToJSON(int pinA, int pinB, JsonObject& sensor)
+// {
+//     // Read using regular read method
+//     int rawA, rawB;
+//     float rawAverage, sensorResistance;
+//     readChameleon(pinA,pinB,&rawA,&rawB,&rawAverage,&sensorResistance);
 
-    // Store the results nicAely into a JSON document
-    // sensor[String("name")] = String("chameleon_") + String(pinA) + "_" + String(pinB);
-    sensor["raw_a"] = rawA;
-    sensor["raw_b"] = rawB;
-    sensor["raw_average"] = rawAverage;
-    sensor["resistance"] = sensorResistance;
-}
+//     // Store the results nicAely into a JSON document
+//     // sensor[String("name")] = String("chameleon_") + String(pinA) + "_" + String(pinB);
+//     sensor["raw_a"] = rawA;
+//     sensor["raw_b"] = rawB;
+//     sensor["raw_average"] = rawAverage;
+//     sensor["resistance"] = sensorResistance;
+// }

@@ -1,10 +1,13 @@
 #include <Arduino.h>
+
+#define SIMCOM_7000
+#define SSL_FONA
+
 #include "Adafruit_FONA.h" // https://github.com/botletics/SIM7000-LTE-Shield/tree/master/Code
 // #include "ArduinoJson.h"
 #include <SoftwareSerial.h>
 // #include <RTClib.h>
 
-#define SIMCOM_7000
 #define FONA_PWRKEY 4
 #define FONA_DTR 5 // Connect with solder jumper
 #define FONA_TX 9  // Microcontroller RX
@@ -41,7 +44,7 @@ unsigned int upper_rawA, upper_rawB;
 float upper_rawAverage, upper_sensorResistance;
 
 bool netStatus();
-void moduleSetup();
+boolean moduleSetup();
 
 int replacechar(char *str, char orig, char rep)
 {
@@ -55,30 +58,60 @@ int replacechar(char *str, char orig, char rep)
     return n;
 }
 
-void simOn();
+// void simOn();
 
 bool hasBooted = false;
 
-void setupFONA()
+boolean setupFONA()
 {
-    // Serial.println("powerDown");
-    // fona.powerDown();
     Serial.println("powerUp");
     fona.powerOn(FONA_PWRKEY);
-    moduleSetup();
 
-    // All features
+    boolean foundModule = moduleSetup();
+    if(!foundModule)
+    {
+        return false;
+    }
+
     Serial.println("setFunc 0");
     fona.setFunctionality(0);
     delay(3000);
+    // Reset if needed
     Serial.println("setFunc 1");
     fona.setFunctionality(1);
     delay(3000);
 
+    // Serial.println("setFunc 6...");
+    fona.setFunctionality(6);
+    delay(10000);
+
+    fona.sendCheckReply(F("ATE0"),F("OK"),1000);
+
+    fona.setFunctionality(1);
+    delay(3000);
+
+    // // Turn off echo
+    // fona.sendCheckReply(F("ATE0"),F("OK"),1000);
+    // Serial.println("setFunc 1");
+    // fona.setFunctionality(1);
+    // delay(3000);
+
+    // All features
     // fona.setNetworkSettings(F("mdata.net.au"));
     Serial.println("set network");
     fona.setNetworkSettings(F("mdata.net.au"));
-    Serial.println("set NTP");
+
+    /* MODE SELECT AND OPERATING BAND MUST OCCUR AFTER NETWORK SETTINGS CALL */
+    // fona.setPreferredMode(51); // GSM+LTE ONLY
+    // fona.setPreferredLTEMode(1); // CAT-M ONLY
+    // These are all the LTE bands telstra support
+    // fona.setOperatingBand("CAT-M", 1);
+    // fona.setOperatingBand("CAT-M", 3);
+    // fona.setOperatingBand("CAT-M", 7); // UNSUPPORTED BY SIM7000G
+    // fona.setOperatingBand("CAT-M", 8);
+    // fona.setOperatingBand("CAT-M", 28);
+
+    // Serial.println("set NTP");
     fona.enableNTPTimeSync(true, F("pool.ntp.org"));
 
     // Perform first-time GPS/data setup if the shield is going to remain on,
@@ -91,24 +124,25 @@ void setupFONA()
     // }
     // Serial.println(F("Turned on GPS!"));
 
+
     // turn GPRS off
     // for (int i = 0; i < 3; i++)
     // {
-        if (!fona.enableGPRS(false))
-        {
-            Serial.println(F("Failed to turn off GPRS..."));
-            delay(2000);
-        }
+    if (!fona.enableGPRS(false))
+    {
+        Serial.println(F("Failed to turn off GPRS..."));
+        delay(2000);
+    }
     // }
 
     // turn GPRS on
     // for (int i = 0; i < 3; i++)
     // {
-        if (!fona.enableGPRS(true))
-        {
-            Serial.println(F("Failed to turn on GPRS..."));
-            delay(2000);
-        }
+    if (!fona.enableGPRS(true))
+    {
+        Serial.println(F("Failed to turn on GPRS..."));
+        delay(2000);
+    }
     // }
 
     // Connect to cell network and verify connection
@@ -121,7 +155,7 @@ void setupFONA()
     Serial.println(F("Connected to cell network!"));
 
     // READ TIME
-    if(!hasBooted)
+    if (!hasBooted)
     {
         fona.getTime(timeBuff, 48);
         // Replace quotes with spaces
@@ -142,6 +176,8 @@ void setupFONA()
         Serial.println(btc);
         hasBooted = true;
     }
+
+    return true;
 }
 
 const char token[] = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
@@ -254,42 +290,36 @@ void loopFONA()
     fona.openWirelessConnection(false);
 }
 
-void simOn()
-{
-    // powers on SIM7000
+// void simOn()
+// {
+//     // powers on SIM7000
 
-    // do check for if sim is on
-    pinMode(FONA_PWRKEY, OUTPUT);
-    // pinMode(FONA_RX, OUTPUT);
-    // digitalWrite(FONA_RX, HIGH);
-    // pinMode(FONA_TX, INPUT_PULLUP);
-    digitalWrite(FONA_PWRKEY, LOW);
-    delay(1000); // For SIM7000
-    digitalWrite(FONA_PWRKEY, HIGH);
-    delay(4000);
-}
+//     // do check for if sim is on
+//     pinMode(FONA_PWRKEY, OUTPUT);
+//     digitalWrite(FONA_PWRKEY, LOW);
+//     delay(1000); // For SIM7000
+//     digitalWrite(FONA_PWRKEY, HIGH);
+//     delay(4000);
+// }
 
-void simOff()
-{
-    // powers off SIM7000
-
-    //  TX / RX pins off to save power
-    // digitalWrite(FONA_RX, LOW);
-    // digitalWrite(FONA_TX, LOW);
-    digitalWrite(FONA_PWRKEY, LOW);
-    delay(1200); // For SIM7000
-    digitalWrite(FONA_PWRKEY, HIGH);
-    delay(2000);
-}
+// void simOff()
+// {
+//     // powers off SIM7000
+//     digitalWrite(FONA_PWRKEY, LOW);
+//     delay(1200); // For SIM7000
+//     digitalWrite(FONA_PWRKEY, HIGH);
+//     delay(2000);
+// }
 
 void shutdownFONA()
 {
     // Serial.println("Shutdown... (DISABLED)");
-    simOff();
-    // fona.powerDown();
+    // simOff();
+    fona.powerDown();
+    // fonaSerial.flush();
 }
 
-boolean tryBegin(unsigned int baud)
+boolean tryBegin(uint32_t baud)
 {
     Serial.print("Opening SerialAT at ");
     Serial.print(baud);
@@ -313,19 +343,30 @@ boolean tryBegin(unsigned int baud)
     return true;
 }
 
-void moduleSetup()
+boolean moduleSetup()
 {
     // SIM7000 takes about 3s to turn on and SIM7500 takes about 15s
     // Press Arduino reset button if the module is still turning on and the board doesn't find it.
     // When the module is on it should communicate right after pressing reset
 
     // Try at 9600
-    tryBegin(9600);
-    // else try at 115200, then set to 9600
-    tryBegin(115200);
-    fona.setBaudrate(9600);
-    // Now re-start at 9600
-    tryBegin(9600);
+    boolean found = tryBegin(9600);
+
+    if (!found)
+    {
+        // else try at 115200, then set to 9600
+        found = tryBegin(115200);
+
+        if (found)
+        {
+            fona.setBaudrate(9600);
+            // Now re-start at 9600
+            found = tryBegin(9600);
+        }else{
+            Serial.println("COULDNT FIND FONA!");
+            return false;
+        }
+    }
 
     type = fona.type();
     Serial.println(F("FONA is OK"));
@@ -374,6 +415,8 @@ void moduleSetup()
         Serial.print("Module IMEI: ");
         Serial.println(imei);
     }
+
+    return true;
 }
 
 bool netStatus()
