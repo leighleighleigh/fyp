@@ -84,5 +84,5 @@ void loop()
   // Sleep for 60 seconds in low-power mode
   // Sleepy(60);
   // reboot();
-  delay(30000);
+  delay(10000);
 }
