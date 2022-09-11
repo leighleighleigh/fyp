@@ -289,27 +289,43 @@ void shutdownFONA()
     // fona.powerDown();
 }
 
+boolean tryBegin(unsigned int baud)
+{
+    Serial.print("Opening SerialAT at ");
+    Serial.print(baud);
+    Serial.println(" baud.");
+
+    fonaSerial.begin(baud); // Default SIM7000 shield baud rate
+
+    // Serial.println(F("Configuring to 9600 baud"));
+    // fonaSerial.println("AT+IPR=9600"); // Set baud rate
+    // delay(100);                        // Short pause to let the command run
+    // fonaSerial.begin(9600);
+
+    if (!fona.begin(fonaSerial))
+    {
+        Serial.println(F("Couldn't find FONA"));
+        fonaSerial.end();
+        return false;
+    }
+
+    Serial.println(F("Found FONA!"));
+    return true;
+}
+
 void moduleSetup()
 {
     // SIM7000 takes about 3s to turn on and SIM7500 takes about 15s
     // Press Arduino reset button if the module is still turning on and the board doesn't find it.
     // When the module is on it should communicate right after pressing reset
 
-    // Software serial:
-    fonaSerial.begin(115200); // Default SIM7000 shield baud rate
-
-    Serial.println(F("Configuring to 9600 baud"));
-    fonaSerial.println("AT+IPR=9600"); // Set baud rate
-    delay(100);                        // Short pause to let the command run
-    fonaSerial.begin(9600);
-
-    if (!fona.begin(fonaSerial))
-    {
-        Serial.println(F("Couldn't find FONA"));
-        return;
-    }
-
-    // fona.setBaudrate(9600);
+    // Try at 9600
+    tryBegin(9600);
+    // else try at 115200, then set to 9600
+    tryBegin(115200);
+    fona.setBaudrate(9600);
+    // Now re-start at 9600
+    tryBegin(9600);
 
     type = fona.type();
     Serial.println(F("FONA is OK"));

@@ -1,0 +1,7 @@
+# ATTRS{idProduct}=="7523"
+# ATTRS{idVendor}=="1a86"
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="ttyESP"
+# BOSL BOARD
+# 0403:6001
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", SYMLINK+="ttyBOSL"
