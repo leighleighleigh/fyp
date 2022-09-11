@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 #define SIMCOM_7000
-#define SSL_FONA
+#define SSL_FONA 1
 
 #include "Adafruit_FONA.h" // https://github.com/botletics/SIM7000-LTE-Shield/tree/master/Code
 // #include "ArduinoJson.h"
@@ -32,9 +32,6 @@ char dateTimeFormat[] = "YYYY-MM-DD hh:mm:ss";
 char timeBuff[48];
 String bootDateTime;
 
-// Create char buffers for the floating point numbers for sprintf
-// Make sure these buffers are long enough for your request URL
-char body[140];
 
 // GLOBAL SENSOR READINGS
 unsigned int rawTemp, rawSoil;
@@ -109,6 +106,10 @@ boolean setupFONA()
     Serial.println("set network");
     fona.setNetworkSettings(F("mdata.net.au"));
 
+    // Improve SNR time
+    fona.sendCheckReply(F("AT+CNBS=1"),F("OK"),1000U);
+
+    fona.setHTTPSRedirect(true);
     /* MODE SELECT AND OPERATING BAND MUST OCCUR AFTER NETWORK SETTINGS CALL */
     // fona.setPreferredMode(51); // GSM+LTE ONLY
     // fona.setPreferredLTEMode(1); // CAT-M ONLY
@@ -194,29 +195,21 @@ boolean setupFONA()
 }
 
 const char token[] = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
-const char URL[] = "http://cms.leigh.sh/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
+const char URL[] = "cms.leigh.sh/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
+const char URLBASE[] = "https://cms.leigh.sh";
+// const char URI[] = "/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
 
 void sendPOST()
 {
+    // Create char buffers for the floating point numbers for sprintf
+    // Make sure these buffers are long enough for your request URL
+    char body[180];
+    uint32_t bodylen = 0;
+
+    // char URIARR[180];
+
     // Construct the appropriate URL's and body, depending on request type
-    // Use IMEI as device ID for this example
-    // The json document variable
-    // StaticJsonDocument<128> doc;
-    // JsonObject root = doc.to<JsonObject>();
-
     fona.getBattVoltage(&vBatt);
-
-    // Fill fields in order of appearance in table SCHEMA
-    // root["bosl_name"] = String(AIO_BOARDNAME);
-    // root["bosl_imei"] = imei;
-    // root["bosl_battery_mv"] = vBatt;
-    // root["bosl_bootup_timestamp"] = timeBuff;
-
-    // Write the JSON output to serial, and the buffer
-    // serializeJson(doc, Serial);
-    // serializeJson(doc, body, 200);
-    // Serial.print(body);
-    // Serial.println();
 
     // POST request
     // sprintf(URL, "http://dweet.io/dweet/for/%s", imei);
@@ -227,21 +220,32 @@ void sendPOST()
 
     // First part of JSON data payload
     // Double string escape is needed on the timeBuff entry
-    sprintf(body, "{\"data\":\"BW3,%s,%u,20%s,%u,%u,%s,%u,%u,%u,%s,%u,0.0,0.0,%s,0.0,0.0,%s\"}", imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(rawTemp).c_str(), String(rawSoil).c_str());
+    bodylen = sprintf(body, "{\"data\":\"BW3,%s,%u,20%s,%u,%u,%s,%u,%u,%u,%s,%u,0.0,0.0,%s,0.0,0.0,%s\"}\0", imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(rawTemp).c_str(), String(rawSoil).c_str());
+    // sprintf(URIARR, "%s", URI);
 
-    // // Turn JSON keys into CSV here
-    // for (JsonPair kv : root) {
-    //     Serial.println(kv.key().c_str());
-    //     Serial.println(kv.value().as<char*>());
-    //     sprintf(body, "%s", kv.value().as<char*>());
-    //     Serial.println(body);
+    // Start HTTPS connection
+    
+    // Connect to server
+    // If https:// is used, #define SSL_FONA 1 in Adafruit_FONA.h
+    // if (! fona.HTTP_connect(URLBASE)) {
+        // Serial.println(F("Failed to connect to server..."));
+    // }else{
+        // Serial.print("Connected to ");
+        // Serial.println(URLBASE);
     // }
 
-    // // Trailing JSON
-    // sprintf(body, "\"}");
+    // Add headers as needed
+    // fona.HTTP_addHeader("User-Agent", "SIM7000", 7);
+    // fona.HTTP_addHeader("Cache-control", "no-cache", 8);
+    // fona.HTTP_addHeader("Connection", "keep-alive", 10);
+    // fona.HTTP_addHeader("Accept", "*/*", 3);
+    // fona.HTTP_addHeader("Content-Type", "application/json", 16);
+
+    // fona.HTTP_POST(URI, body, strlen(body));
+
     int counter = 0;
 
-    while (counter < 3 && !fona.postData("POST", URL, body, token))
+    while (counter < 3 && !fona.postData("POST", URL, body, token, bodylen))
     {
         Serial.println(F("Failed to complete HTTP POST..."));
         counter++;

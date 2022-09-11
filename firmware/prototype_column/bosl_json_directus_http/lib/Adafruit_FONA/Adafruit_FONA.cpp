@@ -1992,6 +1992,13 @@ boolean Adafruit_FONA::postData(const char *request_type, const char *URL, const
   if (! sendCheckReply(F("AT+HTTPPARA=\"CID\",1"), ok_reply, 10000))
     return false;
 
+
+  sendCheckReply(F("AT+SHSSL=1,\"\""), ok_reply, 10000);
+  HTTP_para(F("REDIR"), 1);
+  sendCheckReply(F("AT+CSSLCFG=\"sslversion\",1,3"), ok_reply);
+  // sendCheckReply(F("AT+CASSLCFG=0,\"protocal\",0"), ok_reply);
+  // sendCheckReply(F("AT+CASSLCFG=0,\"crindex\",0"), ok_reply);
+
   // Specify URL
   char urlBuff[strlen(URL) + 22];
 
@@ -2011,10 +2018,26 @@ boolean Adafruit_FONA::postData(const char *request_type, const char *URL, const
     if (! sendCheckReply(F("AT+HTTPPARA=\"CONTENT\",\"application/json\""), ok_reply, 10000))
       return false;
 
+    // if (! sendCheckReply(F("AT+SHAHEAD=\"User-Agent\",\"SIM7000\""), ok_reply, 10000))
+      // return false;
+
+    // if (! sendCheckReply(F("AT+SHAHEAD=\"Connection\",\"keep-alive\""), ok_reply, 10000))
+      // return false;
+
+    // if (! sendCheckReply(F("AT+HTTPPARA=\"USERDATA\",\"User-Agent: SIM7000\""), ok_reply, 10000))
+      // return false;
+
+    // HTTP_addHeader("User-Agent", "SIM7000", 7);
+    // HTTP_addHeader("Cache-control", "no-cache", 8);
+    // HTTP_addHeader("Connection", "keep-alive", 10);
+    // HTTP_addHeader("Accept", "*/*", 3);
+    // fona.HTTP_addHeader("Content-Type", "application/json", 16);
+
     if (strlen(token) > 0) {
       char tokenStr[strlen(token) + 55];
 
       sprintf(tokenStr, "AT+HTTPPARA=\"USERDATA\",\"Authorization: Bearer %s\"", token);
+      // sprintf(tokenStr, "AT+HTTPPARA=\"USERDATA\",\"Authorization: Bearer %s,User-Agent: SIM7000,Connection: keep-alive\"", token);
 
       if (! sendCheckReply(tokenStr, ok_reply, 10000))
         return false;
@@ -2301,8 +2324,10 @@ boolean Adafruit_FONA_LTE::HTTP_POST(const char *URI, const char *body, uint8_t 
   //   // if (! strcmp(replybuffer, "OK") != 0) return false; // Now send the JSON body
   // }
   // else { // For ex, SIM7000
-  //   sprintf(cmdBuff, "AT+SHBOD=\"%s\",%i", body, bodylen);
-  //   if (! sendCheckReply(cmdBuff, ok_reply, 10000)) return false;
+
+  // sprintf(cmdBuff, "AT+SHBOD=\"%s\",%i", body, bodylen);
+  // if (! sendCheckReply(cmdBuff, ok_reply, 10000)) return false;
+
   // }
   
   memset(cmdBuff, 0, sizeof(cmdBuff)); // Clear URI char array
