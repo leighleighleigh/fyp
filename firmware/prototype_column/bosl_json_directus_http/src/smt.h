@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <ArduinoJson.h>
+// #include <ArduinoJson.h>
 
 void readSMT(int pinTemp, int pinoSoil, unsigned int *rawTemp, unsigned int *rawSoil)
 {
@@ -12,13 +12,13 @@ void readSMT(int pinTemp, int pinoSoil, unsigned int *rawTemp, unsigned int *raw
     *rawSoil = analogRead(pinoSoil);
 }
 
-void readSMTToJSON(int pinTemp, int pinSoil, JsonObject& sensor)
-{
-    // Read using regular read method
-    int rawTemp, rawSoil;
-    readSMT(pinTemp,pinSoil,&rawTemp,&rawSoil);
+// void readSMTToJSON(int pinTemp, int pinSoil, JsonObject& sensor)
+// {
+//     // Read using regular read method
+//     int rawTemp, rawSoil;
+//     readSMT(pinTemp,pinSoil,&rawTemp,&rawSoil);
 
-    // Store the results nicAely into a JSON document
-    sensor["raw_temp"] = rawTemp;
-    sensor["raw_soil"] = rawSoil;
-}
+//     // Store the results nicAely into a JSON document
+//     sensor["raw_temp"] = rawTemp;
+//     sensor["raw_soil"] = rawSoil;
+// }

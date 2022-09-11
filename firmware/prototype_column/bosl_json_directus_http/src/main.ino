@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <ArduinoJson.h>
+// #include <ArduinoJson.h>
 #include "chameleon.h"
 #include "smt.h"
 #include <LowPower.h>
@@ -56,14 +56,16 @@ void Sleepy(uint16_t tsleep){ //Sleep Time in seconds
 
 void loop()
 {
-  simOff();
-  simOn();
-
   pinMode(SMT_TMP,INPUT);
   pinMode(SMT_SOIL,INPUT);
   // Setup FONA
   // setupSIM();
-  setupFONA();
+  boolean setupGood = setupFONA();
+  if(!setupGood)
+  {
+    Serial.println("restarting");
+    return;
+  }
 
   // Read SMT100
   // Read using regular read method
@@ -77,10 +79,10 @@ void loop()
   loopFONA();
 
   // Turn off sim
-  // shutdownFONA();
+  shutdownFONA();
 
   // Sleep for 60 seconds in low-power mode
   // Sleepy(60);
   // reboot();
-  delay(300000);
+  delay(30000);
 }
