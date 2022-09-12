@@ -4,14 +4,16 @@
 void setup()
 {
   Serial.begin(9600);
-  Serial.flush();
-  Serial.println("");
-  Serial.println("");
+  // Serial.flush();
+  // Serial.println("");
+  // Serial.println("");
   Serial.println("");
   // simOff();
   simOn();
   moduleSetup();
-  // fonaSerial.write("ATE1\r\n");
+  delay(100);
+  fonaSerial.println("ATE1");
+  delay(100);
   // fonaSerial.flush();
 }
 
