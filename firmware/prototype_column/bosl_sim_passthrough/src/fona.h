@@ -31,9 +31,9 @@ void simOff()
 
 boolean tryBegin(uint32_t baud)
 {
-    Serial.print("Opening SerialAT at ");
-    Serial.print(baud);
-    Serial.println(" baud.");
+    // Serial.print("Opening SerialAT at ");
+    // Serial.print(baud);
+    // Serial.println(" baud.");
     fonaSerial.begin(baud); // Default SIM7000 shield baud rate
 
     // Serial.println(F("Configuring to 9600 baud"));
@@ -55,7 +55,7 @@ boolean moduleSetup()
     {
         // else try at 115200, then set to 9600
         found = tryBegin(115200);
-        Serial.println(F("Configuring to 9600 baud"));
+        // Serial.println(F("Configuring to 9600 baud"));
         fonaSerial.println("AT+IPR=9600"); // Set baud rate
 
         if (found)
@@ -63,7 +63,7 @@ boolean moduleSetup()
             // Now re-start at 9600
             found = tryBegin(9600);
         }else{
-            Serial.println("COULDNT FIND FONA!");
+            // Serial.println("COULDNT FIND FONA!");
             return false;
         }
     }

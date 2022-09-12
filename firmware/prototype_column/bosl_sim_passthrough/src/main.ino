@@ -1,21 +1,13 @@
 #include <Arduino.h>
-#include <avr/wdt.h>
-#define DEBUG Serial
 #include "fona.h"
-
-void reboot() {
-  wdt_disable();
-  wdt_enable(WDTO_15MS);
-  while (1) {}
-}
 
 void setup()
 {
+  Serial.begin(9600);
   // Serial.println("BOOT!");
   simOn();
   moduleSetup();
-
-  Serial.begin(115200);
+  fonaSerial.println("ATE0");
 }
 
 void loop()
