@@ -3,11 +3,14 @@
 
 void setup()
 {
-  Serial.begin(9600);
   // Serial.println("BOOT!");
+  // simOff();
   simOn();
   moduleSetup();
-  fonaSerial.println("ATE0");
+  fonaSerial.write("ATE1\r\n");
+  fonaSerial.flush();
+  Serial.begin(9600);
+  Serial.flush();
 }
 
 void loop()
