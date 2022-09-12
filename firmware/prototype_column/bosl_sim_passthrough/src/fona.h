@@ -51,21 +51,22 @@ boolean moduleSetup()
     // Try at 9600
     boolean found = tryBegin(9600);
 
-    if (!found)
-    {
-        // else try at 115200, then set to 9600
-        found = tryBegin(115200);
-        // Serial.println(F("Configuring to 9600 baud"));
-        fonaSerial.println("AT+IPR=9600"); // Set baud rate
-        delay(100);
+    // if (!found)
+    // {
+    //     // else try at 115200, then set to 9600
+    //     found = tryBegin(115200);
+    //     // Serial.println(F("Configuring to 9600 baud"));
+    //     fonaSerial.println("AT+IPR=9600"); // Set baud rate
+    //     delay(100);
 
-        if (found)
-        {
-            // Now re-start at 9600
-            found = tryBegin(9600);
-        }else{
-            // Serial.println("COULDNT FIND FONA!");
-            return false;
-        }
-    }
+    //     if (found)
+    //     {
+    //         // Now re-start at 9600
+    //         found = tryBegin(9600);
+    //     }else{
+    //         // Serial.println("COULDNT FIND FONA!");
+    //         return false;
+    //     }
+    // }
+    return found;
 }
