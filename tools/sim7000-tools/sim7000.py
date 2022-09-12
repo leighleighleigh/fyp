@@ -197,16 +197,19 @@ if sys.argv[1] == "certs-load":
     AT('+CFSTERM')
 
 if sys.argv[1] == "http3":
-    AT('+SHCONF="URL","{}"'.format("https://www.google.com")) # Set MQTT address
+    #AT('+SHCONF="URL","{}"'.format("https://www.google.com")) # Set MQTT address
+    AT('+SHCONF="URL","{}"'.format("https://***REMOVED***")) # Set MQTT address
     AT('+SHCONF="BODYLEN",63') # Set MQTT address
     AT('+SHCONF="HEADERLEN",350') # Set MQTT address
     AT('+CSSLCFG="ctxindex",0') # Use index 1
     AT('+CSSLCFG="sslversion",0,3') # TLS 1.2
     AT('+CSSLCFG="convert",2,"{}"'.format(CA_NAME))
     #AT('+CSSLCFG="sni",0,"vpn.leigh.sh"')
-    AT('+SHSSL=1,"{}"'.format(CA_NAME))
+    #AT('+SHSSL=0,"{}"'.format(CA_NAME))
+    AT('+SHSSL=1,""')
     AT('+SHSSL?')
     AT('+SHSTATE?') # Check MQTT connection state
+    AT('+SHDISC', timeout=60, success="OK") 
     AT('+SHCONN', timeout=60, success="OK") 
     AT('+SHSTATE?', timeout=5) 
 
