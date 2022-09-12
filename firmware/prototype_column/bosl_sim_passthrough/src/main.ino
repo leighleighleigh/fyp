@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "fona.h"
 
+unsigned long lastcmdtime = millis();
+
 void setup()
 {
   Serial.begin(9600);
@@ -22,6 +24,9 @@ void loop()
   while(Serial.available())
   {
     char c = Serial.read();
+    // IF we havnt received a command in a while
+    if(millis() - lastcmdtime > 5000)
+    {
     if(c == '!')
     {
       Serial.println("SIM_ON...");
@@ -36,11 +41,14 @@ void loop()
       Serial.println("OK");
       break;
     }
+    }
     fonaSerial.write(c);
+    lastcmdtime = millis();
   }
 
   while(fonaSerial.available())
   {
+    lastcmdtime = millis();
     Serial.write(fonaSerial.read());
   }
 }
