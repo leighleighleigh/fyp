@@ -57,6 +57,7 @@ boolean moduleSetup()
         found = tryBegin(115200);
         // Serial.println(F("Configuring to 9600 baud"));
         fonaSerial.println("AT+IPR=9600"); // Set baud rate
+        delay(100);
 
         if (found)
         {
