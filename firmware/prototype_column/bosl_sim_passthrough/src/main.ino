@@ -7,24 +7,40 @@ void setup()
   // Serial.flush();
   // Serial.println("");
   // Serial.println("");
-  Serial.println("");
+  // Serial.println("");
   // simOff();
-  simOn();
+  // simOn();
   moduleSetup();
-  delay(100);
-  fonaSerial.println("ATE1");
-  delay(100);
+  // delay(100);
+  // fonaSerial.println("ATE1");
+  // delay(100);
   // fonaSerial.flush();
 }
 
 void loop()
 {
-  if(fonaSerial.available())
+  while(Serial.available())
+  {
+    char c = Serial.read();
+    if(c == '!')
+    {
+      Serial.println("SIM_ON...");
+      simOn(); 
+      Serial.println("OK");
+      break;
+    }
+    if(c == '@')
+    {
+      Serial.println("SIM_OFF");
+      simOff(); 
+      Serial.println("OK");
+      break;
+    }
+    fonaSerial.write(c);
+  }
+
+  while(fonaSerial.available())
   {
     Serial.write(fonaSerial.read());
-  }
-  if(Serial.available())
-  {
-    fonaSerial.write(Serial.read());
   }
 }
