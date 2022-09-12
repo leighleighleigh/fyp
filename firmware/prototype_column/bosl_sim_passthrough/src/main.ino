@@ -11,10 +11,11 @@ void reboot() {
 
 void setup()
 {
-  Serial.begin(115200);
-  Serial.println("BOOT!");
+  // Serial.println("BOOT!");
   simOn();
   moduleSetup();
+
+  Serial.begin(115200);
 }
 
 void loop()
