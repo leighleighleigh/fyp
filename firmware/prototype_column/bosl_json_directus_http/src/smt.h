@@ -1,7 +1,7 @@
 #include <Arduino.h>
 // #include <ArduinoJson.h>
 
-void readSMT(int pinTemp, int pinoSoil, unsigned int *rawTemp, unsigned int *rawSoil)
+void readSMT(int pinTemp, int pinoSoil, int *rawTemp, int *rawSoil)
 {
     // ASSUMES a 10 BIT ADC RESOLUTION
     // Place into forward current mode
