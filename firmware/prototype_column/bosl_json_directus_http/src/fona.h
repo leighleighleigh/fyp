@@ -8,6 +8,13 @@
 #include <SoftwareSerial.h>
 // #include <RTClib.h>
 
+const char boardName[] = "BW2";
+const char token[] = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
+const char URL[] = "***REMOVED***/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
+const char URLBASE[] = "https://***REMOVED***";
+// const char URI[] = "/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
+
+
 #define FONA_PWRKEY 4
 #define FONA_DTR 5 // Connect with solder jumper
 #define FONA_TX 9  // Microcontroller RX
@@ -34,10 +41,10 @@ String bootDateTime;
 
 
 // GLOBAL SENSOR READINGS
-unsigned int rawTemp, rawSoil;
-unsigned int lower_rawA, lower_rawB;
+int rawTemp, rawSoil;
+int lower_rawA, lower_rawB;
 float lower_rawAverage, lower_sensorResistance;
-unsigned int upper_rawA, upper_rawB;
+int upper_rawA, upper_rawB;
 float upper_rawAverage, upper_sensorResistance;
 
 bool netStatus();
@@ -194,11 +201,6 @@ boolean setupFONA()
     return true;
 }
 
-const char token[] = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
-const char URL[] = "***REMOVED***/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
-const char URLBASE[] = "https://***REMOVED***";
-// const char URI[] = "/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
-
 void sendPOST()
 {
     // Create char buffers for the floating point numbers for sprintf
@@ -220,7 +222,7 @@ void sendPOST()
 
     // First part of JSON data payload
     // Double string escape is needed on the timeBuff entry
-    bodylen = sprintf(body, "{\"data\":\"BW3,%s,%u,20%s,%u,%u,%s,%u,%u,%u,%s,%u,0.0,0.0,%s,0.0,0.0,%s\"}\0", imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(rawTemp).c_str(), String(rawSoil).c_str());
+    bodylen = sprintf(body, "{\"data\":\"%s,%s,%u,20%s,%d,%d,%s,%d,%d,%d,%s,%d,0.0,0.0,%s,0.0,0.0,%s\"}\0", boardName, imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(rawTemp).c_str(), String(rawSoil).c_str());
     // sprintf(URIARR, "%s", URI);
 
     // Start HTTPS connection
