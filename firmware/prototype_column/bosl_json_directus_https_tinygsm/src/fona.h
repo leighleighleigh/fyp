@@ -1,31 +1,39 @@
 #include <Arduino.h>
 
-#define SIMCOM_7000
-#define SSL_FONA 1
+#define TINY_GSM_MODEM_SIM7000SSL
+#include <TinyGsmClient.h>
+#include <ArduinoHttpClient.h>
 
-#include "Adafruit_FONA.h" // https://github.com/botletics/SIM7000-LTE-Shield/tree/master/Code
+// #include "Adafruit_FONA.h" // https://github.com/botletics/SIM7000-LTE-Shield/tree/master/Code
 // #include "ArduinoJson.h"
 #include <SoftwareSerial.h>
 // #include <RTClib.h>
 
-const char boardName[] = "BW2";
+const char boardName[] = "BW3";
 const char token[] = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
 const char URL[] = "cms.leigh.sh/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
-const char URLBASE[] = "https://cms.leigh.sh";
+const char URLCONTENT[] = "/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
+// const char URLBASE[] = "https://cms.leigh.sh";
+const char URLBASE[] = "cms.leigh.sh";
 // const char URI[] = "/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
-
 
 #define FONA_PWRKEY 4
 #define FONA_DTR 5 // Connect with solder jumper
 #define FONA_TX 9  // Microcontroller RX
 #define FONA_RX 8  // Microcontroller TX
+#define SerialMon Serial
 
 SoftwareSerial fonaSerial = SoftwareSerial(FONA_TX, FONA_RX);
-Adafruit_FONA_LTE fona = Adafruit_FONA_LTE();
+TinyGsm modem(fonaSerial);
+TinyGsmClientSecure fona(modem);
+HttpClient http(fona, URLBASE, 443);
+
+// Adafruit_FONA_LTE fona = Adafruit_FONA_LTE();
 
 /****************************** OTHER STUFF ***************************************/
-char imei[16] = {0}; // Use this for device ID
-uint8_t type;
+String imei;
+// char imei[16] = {0}; // Use this for device ID
+// uint8_t type;
 uint16_t vBatt;
 
 // char PIN[5] = "1234"; // SIM card PIN
@@ -38,7 +46,6 @@ char dateTimeFormat[] = "YYYY-MM-DD hh:mm:ss";
 
 char timeBuff[48];
 String bootDateTime;
-
 
 // GLOBAL SENSOR READINGS
 int rawTemp, rawSoil;
@@ -62,18 +69,20 @@ int replacechar(char *str, char orig, char rep)
     return n;
 }
 
-// void simOn();
+void simOn();
 
 bool hasBooted = false;
 
 boolean setupFONA()
 {
     Serial.println("powerUp");
-    fona.powerOn(FONA_PWRKEY);
+
+    // fona.powerOn(FONA_PWRKEY);
+    simOn();
     delay(6000);
 
     boolean foundModule = moduleSetup();
-    if(!foundModule)
+    if (!foundModule)
     {
         return false;
     }
@@ -81,13 +90,14 @@ boolean setupFONA()
     // fona.sendCheckReply(F("ATE0"),F("OK"),500);
     // fona.sendCheckReply(F("AT&W0"),F("OK"),500);
 
-    Serial.println("setFunc 0");
-    fona.setFunctionality(0);
-    delay(3000);
-    // Reset if needed
-    Serial.println("setFunc 1");
-    fona.setFunctionality(1);
-    delay(3000);
+    // Serial.println("setFunc 0");
+    // modem.setPhoneFunctionality()
+    // fona.setFunctionality(0);
+    // delay(3000);
+    // // Reset if needed
+    // Serial.println("setFunc 1");
+    // fona.setFunctionality(1);
+    // delay(3000);
 
     // Serial.println("setFunc 6...");
     // fona.setFunctionality(6);
@@ -99,8 +109,8 @@ boolean setupFONA()
     // fona.sendCheckReply(F("ATE0"),F("OK"),500);
     // fona.sendCheckReply(F("ATE0"),F("OK"),500);
 
-    fona.setFunctionality(1);
-    delay(3000);
+    // fona.setFunctionality(1);
+    // delay(3000);
 
     // // Turn off echo
     // fona.sendCheckReply(F("ATE0"),F("OK"),1000);
@@ -111,12 +121,13 @@ boolean setupFONA()
     // All features
     // fona.setNetworkSettings(F("mdata.net.au"));
     Serial.println("set network");
-    fona.setNetworkSettings(F("mdata.net.au"));
+    // fona.setNetworkSettings(F("mdata.net.au"));
+    modem.gprsConnect("mdata.net.au");
 
     // Improve SNR time
-    fona.sendCheckReply(F("AT+CNBS=1"),F("OK"),1000U);
+    // fona.sendCheckReply(F("AT+CNBS=1"),F("OK"),1000U);
 
-    fona.setHTTPSRedirect(true);
+    // fona.setHTTPSRedirect(true);
     /* MODE SELECT AND OPERATING BAND MUST OCCUR AFTER NETWORK SETTINGS CALL */
     // fona.setPreferredMode(51); // GSM+LTE ONLY
     // fona.setPreferredLTEMode(1); // CAT-M ONLY
@@ -128,7 +139,8 @@ boolean setupFONA()
     // fona.setOperatingBand("CAT-M", 28);
 
     // Serial.println("set NTP");
-    fona.enableNTPTimeSync(true, F("pool.ntp.org"));
+    // fona.enableNTPTimeSync(true, F("pool.ntp.org"));
+    modem.NTPServerSync();
 
     // Perform first-time GPS/data setup if the shield is going to remain on,
     // otherwise these won't be enabled in loop() and it won't work!
@@ -140,53 +152,63 @@ boolean setupFONA()
     // }
     // Serial.println(F("Turned on GPS!"));
 
-
     // turn GPRS off
     // for (int i = 0; i < 3; i++)
     // {
     // if (!fona.enableGPRS(false))
     // {
-        // Serial.println(F("Failed to turn off GPRS..."));
-        // delay(2000);
+    // Serial.println(F("Failed to turn off GPRS..."));
+    // delay(2000);
     // }
     // }
 
     // turn GPRS on
     // for (int i = 0; i < 3; i++)
     // {
-    while (!fona.enableGPRS(true))
-    {
-        Serial.println(F("Failed to turn on GPRS..."));
-        delay(2000);
-        if (!fona.enableGPRS(false))
-        {
-            Serial.println(F("Failed to turn off GPRS..."));
-            delay(2000);
-        }
-    }
+    // while (!modem.isGprsConnected())
+    // {
+    //     Serial.println(F("GPRS not yet connected..."));
+    //     delay(2000);
+    // }
     // }
 
     // Connect to cell network and verify connection
     // If unsuccessful, keep retrying every 2s until a connection is made
-    while (!netStatus())
-    {
-        Serial.println(F("Failed to connect to cell network, retrying..."));
-        delay(2000); // Retry every 2s
+    // while (!netStatus())
+    // {
+    //     Serial.println(F("Failed to connect to cell network, retrying..."));
+    //     delay(2000); // Retry every 2s
+    // }
+    // Serial.println(F("Connected to cell network!"));
+
+    SerialMon.print("Waiting for network...");
+    while(!modem.waitForNetwork()) {
+        SerialMon.println(" fail");
+        delay(10000);
     }
-    Serial.println(F("Connected to cell network!"));
+    SerialMon.println(" success");
+
+    if (modem.isNetworkConnected()) { SerialMon.println("Network connected"); }
+
+    // GPRS connection parameters are usually set after network registration
+    SerialMon.print(F("Connecting to "));
+    SerialMon.print("mdata.net.au");
+    while (!modem.gprsConnect("mdata.net.au")) {
+        SerialMon.println(" fail");
+        delay(10000);
+    }
+    SerialMon.println(" success");
+
+    if (modem.isGprsConnected()) { SerialMon.println("GPRS connected"); }
 
     // READ TIME
     if (!hasBooted)
     {
-        fona.getTime(timeBuff, 48);
-        // Replace quotes with spaces
-        replacechar(timeBuff, '\"', ' ');
-
-        Serial.print("Network time: ");
-        Serial.println(timeBuff);
-
         // Clean the network time into DateTime format
-        String bt = String(timeBuff);
+        String bt = modem.getGSMDateTime(DATE_FULL);
+        Serial.print("Time: ");
+        Serial.println(bt);
+
         bt.replace('/', '-');
         bt.replace(',', ' ');
         unsigned int tsIndex = bt.indexOf('+');
@@ -205,13 +227,13 @@ void sendPOST()
 {
     // Create char buffers for the floating point numbers for sprintf
     // Make sure these buffers are long enough for your request URL
-    char body[180];
-    uint32_t bodylen = 0;
+    // char body[180];
+    // uint32_t bodylen = 0;
 
     // char URIARR[180];
 
     // Construct the appropriate URL's and body, depending on request type
-    fona.getBattVoltage(&vBatt);
+    vBatt = modem.getBattVoltage();
 
     // POST request
     // sprintf(URL, "http://dweet.io/dweet/for/%s", imei);
@@ -222,18 +244,19 @@ void sendPOST()
 
     // First part of JSON data payload
     // Double string escape is needed on the timeBuff entry
-    bodylen = sprintf(body, "{\"data\":\"%s,%s,%u,20%s,%d,%d,%s,%d,%d,%d,%s,%d,0.0,0.0,%s,0.0,0.0,%s\"}\0", boardName, imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(rawTemp).c_str(), String(rawSoil).c_str());
+    // bodylen = sprintf(body, "{\"data\":\"%s,%s,%u,20%s,%d,%d,%s,%d,%d,%d,%s,%d,0.0,0.0,%s,0.0,0.0,%s\"}\0", boardName, imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(rawTemp).c_str(), String(rawSoil).c_str());
+
     // sprintf(URIARR, "%s", URI);
 
     // Start HTTPS connection
-    
+
     // Connect to server
     // If https:// is used, #define SSL_FONA 1 in Adafruit_FONA.h
     // if (! fona.HTTP_connect(URLBASE)) {
-        // Serial.println(F("Failed to connect to server..."));
+    // Serial.println(F("Failed to connect to server..."));
     // }else{
-        // Serial.print("Connected to ");
-        // Serial.println(URLBASE);
+    // Serial.print("Connected to ");
+    // Serial.println(URLBASE);
     // }
 
     // Add headers as needed
@@ -245,14 +268,73 @@ void sendPOST()
 
     // fona.HTTP_POST(URI, body, strlen(body));
 
-    int counter = 0;
+    // int counter = 0;
+    // // fona.connect(URLBASE,443);
+    // http.get(URLCONTENT);
 
-    while (counter < 3 && !fona.postData("POST", URL, body, token, bodylen))
+    // while(!fona.connected())
+    // {
+    //     Serial.println("Not connected...");
+    //     delay(1000);
+    // }
+
+    // Serial.println("Connected!");
+    SerialMon.print(F("Performing HTTPS GET request... "));
+    http.connectionKeepAlive(); // Currently, this is needed for HTTPS
+    int err = http.get(URLCONTENT);
+    if (err != 0)
     {
-        Serial.println(F("Failed to complete HTTP POST..."));
-        counter++;
-        delay(1000);
+        SerialMon.println(F("failed to connect"));
+        delay(10000);
+        return;
     }
+
+    int status = http.responseStatusCode();
+    SerialMon.print(F("Response status code: "));
+    SerialMon.println(status);
+    if (!status)
+    {
+        delay(10000);
+        return;
+    }
+
+    SerialMon.println(F("Response Headers:"));
+    while (http.headerAvailable())
+    {
+        String headerName = http.readHeaderName();
+        String headerValue = http.readHeaderValue();
+        SerialMon.println("    " + headerName + " : " + headerValue);
+    }
+
+    int length = http.contentLength();
+    if (length >= 0)
+    {
+        SerialMon.print(F("Content length is: "));
+        SerialMon.println(length);
+    }
+    if (http.isResponseChunked())
+    {
+        SerialMon.println(F("The response is chunked"));
+    }
+
+    String body = http.responseBody();
+    SerialMon.println(F("Response:"));
+    SerialMon.println(body);
+
+    SerialMon.print(F("Body length is: "));
+    SerialMon.println(body.length());
+
+    // Shutdown
+
+    http.stop();
+    SerialMon.println(F("Server disconnected"));
+
+    // while (counter < 3 && !fona.postData("POST", URL, body, token, bodylen))
+    // {
+    //     Serial.println(F("Failed to complete HTTP POST..."));
+    //     counter++;
+    //     delay(1000);
+    // }
 
     // if (!fona.postData("POST", URL, body)) // Can also add authorization token parameter!
     // Serial.println(F("Failed to complete HTTP POST..."));
@@ -262,19 +344,19 @@ void loopFONA()
 {
 
     // Open wireless connection if not already activated
-    if (!fona.wirelessConnStatus())
-    {
-        while (!fona.openWirelessConnection(true))
-        {
-            Serial.println(F("Failed to enable connection, retrying..."));
-            delay(2000); // Retry every 2s
-        }
-        Serial.println(F("Enabled data!"));
-    }
-    else
-    {
-        Serial.println(F("Data already enabled!"));
-    }
+    // if (!fona.wirelessConnStatus())
+    // {
+    //     while (!fona.openWirelessConnection(true))
+    //     {
+    //         Serial.println(F("Failed to enable connection, retrying..."));
+    //         delay(2000); // Retry every 2s
+    //     }
+    //     Serial.println(F("Enabled data!"));
+    // }
+    // else
+    // {
+    //     Serial.println(F("Data already enabled!"));
+    // }
 
     sendPOST();
 
@@ -306,20 +388,20 @@ void loopFONA()
 
     // Disconn
     // fona.MQTT_connect(false);
-    fona.openWirelessConnection(false);
+    // fona.openWirelessConnection(false);
 }
 
-// void simOn()
-// {
-//     // powers on SIM7000
+void simOn()
+{
+    // powers on SIM7000
 
-//     // do check for if sim is on
-//     pinMode(FONA_PWRKEY, OUTPUT);
-//     digitalWrite(FONA_PWRKEY, LOW);
-//     delay(1000); // For SIM7000
-//     digitalWrite(FONA_PWRKEY, HIGH);
-//     delay(4000);
-// }
+    // do check for if sim is on
+    pinMode(FONA_PWRKEY, OUTPUT);
+    digitalWrite(FONA_PWRKEY, LOW);
+    delay(1000); // For SIM7000
+    digitalWrite(FONA_PWRKEY, HIGH);
+    delay(4000);
+}
 
 void simOff()
 {
@@ -333,7 +415,8 @@ void simOff()
 void shutdownFONA()
 {
     // Serial.println("Shutdown... (DISABLED)");
-    fona.powerDown();
+    // fona.powerDown();
+    // modem.poweroff();
     simOff();
     // fonaSerial.flush();
 }
@@ -351,7 +434,7 @@ boolean tryBegin(uint32_t baud)
     // delay(100);                        // Short pause to let the command run
     // fonaSerial.begin(9600);
 
-    if (!fona.begin(fonaSerial))
+    if (!modem.init())
     {
         Serial.println(F("Couldn't find FONA"));
         fonaSerial.end();
@@ -378,84 +461,41 @@ boolean moduleSetup()
 
         if (found)
         {
-            fona.setBaudrate(9600);
+            modem.setBaud(9600);
             // Now re-start at 9600
             found = tryBegin(9600);
-        }else{
+        }
+        else
+        {
             Serial.println("COULDNT FIND FONA!");
             return false;
         }
     }
 
-    type = fona.type();
-    Serial.println(F("FONA is OK"));
-    Serial.print(F("Found "));
-    switch (type)
-    {
-    case SIM800L:
-        Serial.println(F("SIM800L"));
-        break;
-    case SIM800H:
-        Serial.println(F("SIM800H"));
-        break;
-    case SIM808_V1:
-        Serial.println(F("SIM808 (v1)"));
-        break;
-    case SIM808_V2:
-        Serial.println(F("SIM808 (v2)"));
-        break;
-    case SIM5320A:
-        Serial.println(F("SIM5320A (American)"));
-        break;
-    case SIM5320E:
-        Serial.println(F("SIM5320E (European)"));
-        break;
-    case SIM7000:
-        Serial.println(F("SIM7000"));
-        break;
-    case SIM7070:
-        Serial.println(F("SIM7070"));
-        break;
-    case SIM7500:
-        Serial.println(F("SIM7500"));
-        break;
-    case SIM7600:
-        Serial.println(F("SIM7600"));
-        break;
-    default:
-        Serial.println(F("???"));
-        break;
-    }
-
     // Print module IMEI number.
-    uint8_t imeiLen = fona.getIMEI(imei);
-    if (imeiLen > 0)
-    {
-        Serial.print("Module IMEI: ");
-        Serial.println(imei);
-    }
+    imei = modem.getIMEI();
 
     return true;
 }
 
 bool netStatus()
 {
-    int n = fona.getNetworkStatus();
+    RegStatus n = modem.getRegistrationStatus();
 
     Serial.print(F("Network status "));
     Serial.print(n);
     Serial.print(F(": "));
-    if (n == 0)
+    if (n == REG_UNREGISTERED)
         Serial.println(F("Not registered"));
-    if (n == 1)
+    if (n == REG_OK_HOME)
         Serial.println(F("Registered (home)"));
-    if (n == 2)
+    if (n == REG_SEARCHING)
         Serial.println(F("Not registered (searching)"));
-    if (n == 3)
+    if (n == REG_DENIED)
         Serial.println(F("Denied"));
-    if (n == 4)
+    if (n == REG_UNKNOWN)
         Serial.println(F("Unknown"));
-    if (n == 5)
+    if (n == REG_OK_ROAMING)
         Serial.println(F("Registered roaming"));
 
     if (!(n == 1 || n == 5))
