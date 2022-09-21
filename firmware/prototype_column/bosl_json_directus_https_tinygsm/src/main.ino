@@ -58,7 +58,7 @@ SoftwareSerial SerialAT(BOSL_RX, BOSL_TX);  // RX, TX
 // need enough space in the buffer for the entire response
 // else data will be lost (and the http library will fail).
 #if !defined(TINY_GSM_RX_BUFFER)
-#define TINY_GSM_RX_BUFFER 200
+#define TINY_GSM_RX_BUFFER 240
 #endif
 
 // See all AT commands, if wanted
@@ -76,7 +76,7 @@ SoftwareSerial SerialAT(BOSL_RX, BOSL_TX);  // RX, TX
 
 // Add a reception delay, if needed.
 // This may be needed for a fast processor at a slow baud rate.
-#define TINY_GSM_YIELD() { delay(2); }
+// #define TINY_GSM_YIELD() { delay(2); }
 
 // Define how you're planning to connect to the internet.
 // This is only needed for this example, not in other code.
@@ -168,6 +168,7 @@ void setup() {
   // !!!!!!!!!!!
   simOff();
   simOn();
+  delay(6000);
 
   SerialMon.println("Wait...");
 
@@ -238,51 +239,92 @@ void loop() {
 
   SerialMon.print(F("Performing HTTPS GET request... "));
   http.connectionKeepAlive();  // Currently, this is needed for HTTPS
-  http.sendHeader(F("Accept: text/plain"));
-  http.sendHeader(F("Cache-Control: no-cache"));
-  http.sendHeader(F("Transfer-Encoding: chunked"));
 
-  int err = http.get(resource);
-  if (err != 0) {
-    SerialMon.println(F("failed to connect"));
+  // http.connect(server,port);
+  // http.sendHeader(F("Accept: text/plain"));
+  // http.sendHeader(F("Cache-Control: no-cache"));
+  // http.sendHeader(F("Transfer-Encoding: chunked"));
+  
+  // int err = http.get(resource);
+  // if (err != 0) {
+  //   SerialMon.println(F("failed to connect"));
+  //   delay(10000);
+  //   return;
+  // }
+
+  // int status = http.responseStatusCode();
+  // SerialMon.print(F("Response status code: "));
+  // SerialMon.println(status);
+  // if (!status) {
+  //   delay(10000);
+  //   return;
+  // }
+
+  // SerialMon.println(F("Response Headers:"));
+  // while (http.headerAvailable()) {
+  //   String headerName  = http.readHeaderName();
+  //   String headerValue = http.readHeaderValue();
+  //   SerialMon.println("    " + headerName + " : " + headerValue);
+  // }
+
+  // int length = http.contentLength();
+  // if (length >= 0) {
+  //   SerialMon.print(F("Content length is: "));
+  //   SerialMon.println(length);
+  // }
+  // if (http.isResponseChunked()) {
+  //   SerialMon.println(F("The response is chunked"));
+  // }
+
+  // String body = http.responseBody();
+  // SerialMon.println(F("Response:"));
+  // SerialMon.println(body);
+
+  // SerialMon.print(F("Body length is: "));
+  // SerialMon.println(body.length());
+
+  // // Shutdown
+
+  // http.stop();
+  // SerialMon.println(F("Server disconnected"));
+
+  // client.setCertificate("");
+
+  SerialMon.print("Connecting to ");
+  SerialMon.println(server);
+  if (!client.connect(server, port)) {
+    SerialMon.println(" fail");
     delay(10000);
     return;
   }
+  SerialMon.println(" success");
 
-  int status = http.responseStatusCode();
-  SerialMon.print(F("Response status code: "));
-  SerialMon.println(status);
-  if (!status) {
-    delay(10000);
-    return;
+  // Make a HTTP GET request:
+  SerialMon.println("Performing HTTP GET request...");
+  client.print(String("GET ") + resource + " HTTP/1.1\r\n");
+  client.print(String("Accept: */*") + "\r\n");
+  client.print(String("Host: ") + server + "\r\n");
+  client.print(String("User-Agent: Arduino/1.0") + "\r\n");
+  client.print(String("Content-Encoding: identity") + "\r\n");
+  client.print(String("Cache-Control: no-cache") + "\r\n");
+  client.print("Connection: keep-alive\r\n\r\n");
+  client.println();
+  client.println();
+
+  uint32_t timeout = millis();
+  while (client.connected() && millis() - timeout < 10000L) {
+    // Print available data
+    while (client.available()) {
+      char c = client.read();
+      SerialMon.print(c);
+      timeout = millis();
+    }
   }
-
-  SerialMon.println(F("Response Headers:"));
-  while (http.headerAvailable()) {
-    String headerName  = http.readHeaderName();
-    String headerValue = http.readHeaderValue();
-    SerialMon.println("    " + headerName + " : " + headerValue);
-  }
-
-  int length = http.contentLength();
-  if (length >= 0) {
-    SerialMon.print(F("Content length is: "));
-    SerialMon.println(length);
-  }
-  if (http.isResponseChunked()) {
-    SerialMon.println(F("The response is chunked"));
-  }
-
-  String body = http.responseBody();
-  SerialMon.println(F("Response:"));
-  SerialMon.println(body);
-
-  SerialMon.print(F("Body length is: "));
-  SerialMon.println(body.length());
+  SerialMon.println();
 
   // Shutdown
 
-  http.stop();
+  client.stop();
   SerialMon.println(F("Server disconnected"));
 
 #if TINY_GSM_USE_WIFI
