@@ -8,13 +8,6 @@
 #include <SoftwareSerial.h>
 // #include <RTClib.h>
 
-const char boardName[] = "BW2";
-const char token[] = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
-const char URL[] = "cms.leigh.sh/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
-const char URLBASE[] = "https://cms.leigh.sh";
-// const char URI[] = "/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
-
-
 #define FONA_PWRKEY 4
 #define FONA_DTR 5 // Connect with solder jumper
 #define FONA_TX 9  // Microcontroller RX
@@ -41,10 +34,10 @@ String bootDateTime;
 
 
 // GLOBAL SENSOR READINGS
-int rawTemp, rawSoil;
-int lower_rawA, lower_rawB;
+unsigned int rawTemp, rawSoil;
+unsigned int lower_rawA, lower_rawB;
 float lower_rawAverage, lower_sensorResistance;
-int upper_rawA, upper_rawB;
+unsigned int upper_rawA, upper_rawB;
 float upper_rawAverage, upper_sensorResistance;
 
 bool netStatus();
@@ -78,29 +71,48 @@ boolean setupFONA()
         return false;
     }
 
+    // fona.sendCheckReply(F("AT+CFUN=6"),F("OK"),6000U);
+    // delay(10000);
+    // fona.sendCheckReply(F("ATE0"),F("OK"),6000U);
+    // fona.sendCheckReply(F("AT+CFUN=0"),F("OK"),6000U);
+    // delay(1000);
+    // fona.sendCheckReply(F("AT+CNCFG=0,\"mdata.net.au\""),F("OK"),6000U);
+    // delay(1000);
+    // fona.sendCheckReply(F("AT+CGDCONT=1,\"IP\",\"mdata.net.au\""),F("OK"),6000U);
+    // delay(1000);
+    // fona.sendCheckReply(F("AT+CFUN=1"),F("OK"),6000U);
+    // delay(1000);
+    // fona.sendCheckReply(F("AT+CPIN?"),F("OK"),6000U);
+    // fona.sendCheckReply(F("AT+CGATT?"),F("OK"),6000U);
+    // fona.sendCheckReply(F("AT+CGNAPN"),F("OK"),6000U);
+    // fona.sendCheckReply(F("AT+CNACT=1"),F("OK"),6000U);
+    // fona.sendCheckReply(F("AT+CNACT?"),F("OK"),6000U);
+    // delay(3000);
+    // fona.sendCheckReply(F(""),F("OK"),1000U);
+
     // fona.sendCheckReply(F("ATE0"),F("OK"),500);
     // fona.sendCheckReply(F("AT&W0"),F("OK"),500);
 
     Serial.println("setFunc 0");
     fona.setFunctionality(0);
-    delay(3000);
+    delay(1000);
     // Reset if needed
-    Serial.println("setFunc 1");
+    // Serial.println("setFunc 1");
+    // fona.setFunctionality(1);
+    // delay(3000);
+
+    Serial.println("setFunc 6...");
+    fona.setFunctionality(6);
+    delay(10000);
+
+    fona.sendCheckReply(F("ATE0"),F("OK"),500);
+    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
+
+    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
+    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
+
     fona.setFunctionality(1);
-    delay(3000);
-
-    // Serial.println("setFunc 6...");
-    // fona.setFunctionality(6);
-    // delay(10000);
-
-    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
-    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
-
-    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
-    // fona.sendCheckReply(F("ATE0"),F("OK"),500);
-
-    fona.setFunctionality(1);
-    delay(3000);
+    delay(1000);
 
     // // Turn off echo
     // fona.sendCheckReply(F("ATE0"),F("OK"),1000);
@@ -109,16 +121,16 @@ boolean setupFONA()
     // delay(3000);
 
     // All features
-    // fona.setNetworkSettings(F("mdata.net.au"));
-    Serial.println("set network");
     fona.setNetworkSettings(F("mdata.net.au"));
+    // Serial.println("set network");
+    // fona.setNetworkSettings(F("mdata.net.au"));
 
     // Improve SNR time
     fona.sendCheckReply(F("AT+CNBS=1"),F("OK"),1000U);
 
-    fona.setHTTPSRedirect(true);
+    // fona.setHTTPSRedirect(true);
     /* MODE SELECT AND OPERATING BAND MUST OCCUR AFTER NETWORK SETTINGS CALL */
-    // fona.setPreferredMode(51); // GSM+LTE ONLY
+    // fona.setPreferredMode(50); // GSM+LTE ONLY
     // fona.setPreferredLTEMode(1); // CAT-M ONLY
     // These are all the LTE bands telstra support
     // fona.setOperatingBand("CAT-M", 1);
@@ -201,6 +213,12 @@ boolean setupFONA()
     return true;
 }
 
+const char token[] = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
+const char URL[] = "cms.leigh.sh/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
+const char URLBASE[] = "https://cms.leigh.sh";
+const char URI[] = "/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
+// const char URI[] = "/post";
+
 void sendPOST()
 {
     // Create char buffers for the floating point numbers for sprintf
@@ -208,54 +226,81 @@ void sendPOST()
     char body[180];
     uint32_t bodylen = 0;
 
-    // char URIARR[180];
-
     // Construct the appropriate URL's and body, depending on request type
     fona.getBattVoltage(&vBatt);
 
-    // POST request
-    // sprintf(URL, "http://dweet.io/dweet/for/%s", imei);
-    // sprintf(body, "{\"temp\":%s,\"batt\":%i}", tempBuff, battLevel);
-    // Put URL into URL
-    // sprintf(URL, "http://demo.thingsboard.io/api/v1/%s/telemetry", token);
-    // sprintf(URL, "http://cms.leigh.sh/items/column_sensors?access_token=%s",token);
+    bodylen = sprintf(body, "{\"data\":\"BW3,%s,%u,20%s,%u,%u,%s,%u,%u,%u,%s,%u,0.0,0.0,%s,0.0,0.0,%s\"}\0", imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(rawTemp).c_str(), String(rawSoil).c_str());
 
-    // First part of JSON data payload
-    // Double string escape is needed on the timeBuff entry
-    bodylen = sprintf(body, "{\"data\":\"%s,%s,%u,20%s,%d,%d,%s,%d,%d,%d,%s,%d,0.0,0.0,%s,0.0,0.0,%s\"}\0", boardName, imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(rawTemp).c_str(), String(rawSoil).c_str());
-    // sprintf(URIARR, "%s", URI);
+    Serial.print("NTP stat: ");
+    Serial.println(fona.getNTPstatus());
+    // fona.HTTP_init();
+    fona.sendCheckReply(F("AT+SHDISC"),F("OK"),10000U);
+    fona.sendCheckReply(F("AT+CNACT?"),F("OK"),10000U);
+    fona.sendCheckReply(F("AT+CGMR"),F("OK"),10000U);
 
-    // Start HTTPS connection
-    
-    // Connect to server
-    // If https:// is used, #define SSL_FONA 1 in Adafruit_FONA.h
-    // if (! fona.HTTP_connect(URLBASE)) {
-        // Serial.println(F("Failed to connect to server..."));
-    // }else{
-        // Serial.print("Connected to ");
-        // Serial.println(URLBASE);
-    // }
+    fona.sendCheckReply(F("AT+CMEE=1"),F("OK"),10000U);
+    // fona.HTTP_para(F("REDIR"), 1);
+    // fona.sendCheckReply(F("AT+CACLOSE=1"),F("OK"),5000U);
+    fona.sendCheckReply(F("AT+CACID=1"),F("OK"),5000U);
+    fona.sendCheckReply(F("AT+CSSLCFG=\"sslversion\",1,3"),F("OK"),5000U);
+    delay(1000);
+    fona.sendCheckReply(F("AT+SHSSL=1,\"\""),F("OK"),5000U);
+    delay(1000);
+    fona.sendCheckReply(F("AT+CSSLCFG=\"ctxindex\",1"),F("OK"),5000U);
+    fona.sendCheckReply(F("AT+CSSLCFG=\"ignorertctime\",1,1"),F("OK"),5000U);
+    fona.sendCheckReply(F("AT+CSSLCFG=\"protocol\",1,1"),F("OK"),5000U);
+    fona.sendCheckReply(F("AT+CSSLCFG=sni,1,\"vpn.leigh.sh\""),F("OK"),5000U);
 
-    // Add headers as needed
-    // fona.HTTP_addHeader("User-Agent", "SIM7000", 7);
-    // fona.HTTP_addHeader("Cache-control", "no-cache", 8);
-    // fona.HTTP_addHeader("Connection", "keep-alive", 10);
-    // fona.HTTP_addHeader("Accept", "*/*", 3);
-    // fona.HTTP_addHeader("Content-Type", "application/json", 16);
+    fona.sendCheckReply(F("AT+CASSLCFG=1,\"ssl\",1"),F("OK"),5000U);
+    fona.sendCheckReply(F("AT+CASSLCFG=1,\"cacert\","),F("OK"),5000U);
+    fona.sendCheckReply(F("AT+CASSLCFG=1,\"crindex\",1"),F("OK"),5000U);
+    // fona.sendCheckReply(F("AT+CASSLCFG=0,\"protocol\",0"),F("OK"),5000U);
 
-    // fona.HTTP_POST(URI, body, strlen(body));
+    fona.sendCheckReply(F("AT+SHCONF=\"TIMEOUT\",300"),F("OK"),5000U);
+    // fona.sendCheckReply(F("AT+SHCONF=\"URL\",\"https://cms.leigh.sh\""),F("OK"),5000U);
+    fona.sendCheckReply(F("AT+SHCONF=\"URL\",\"http://cms.leigh.sh\""),F("OK"),5000U);
+    // fona.sendCheckReply(F("AT+SHCONF=\"URL\",\"https://p433xox0.directus.app\""),F("OK"),5000U);
+    delay(1000);
+    fona.sendCheckReply(F("AT+SHCONF=\"BODYLEN\",63"),F("OK"),5000U);
+    delay(1000);
+    fona.sendCheckReply(F("AT+SHCONF=\"HEADERLEN\",350"),F("OK"),5000U);
+    delay(3000);
 
+    // fona.sendCheckReply(F("AT+CAOPEN=1,\"TCP\",\"httpbin.org\",443"),F("OK"),10000U);
+
+    fona.sendCheckReply(F("AT+SHDISC"),F("OK"),10000U);
+    fona.sendCheckReply(F("AT+SHCONN"),F("OK"),10000U);
+    // fona.sendCheckReply(F("AT+SHDISC"),F("OK"),10000U);
+    // delay(1000);
+    fona.sendCheckReply(F("AT+SHCONN"),F("OK"),10000U);
+    // delay(1000);
+    fona.sendCheckReply(F("AT+SHCONN"),F("OK"),60000U);
+    delay(1000);
+    // fona.sendCheckReply(F("AT+SHCONN"),F("OK"),10000U);
+    // delay(1000);
+
+    fona.sendCheckReply(F("AT+SHCHEAD"),F("OK"),10000U);
+    fona.sendCheckReply(F("AT+SHAHEAD=\"Connection\",\"keep-alive\""),F("OK"),10000U);
+    // fona.sendCheckReply(F("AT+SHAHEAD=\"Accept\",\"*/*\""),F("OK"),10000U);
+    // fona.sendCheckReply(F("AT+SHAHEAD=\"User-Agent\",\"curl/7.47.0\""),F("OK"),10000U);
+    // fona.sendCheckReply(F("AT+SHAHEAD=\"Cache-control\",\"no-cache\""),F("OK"),10000U);
+    fona.sendCheckReply(F("AT+SHAHEAD=\"Authorization\",\"Bearer nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN\""),F("OK"),10000U);
+
+
+    // fona.sendCheckReply(F("AT+SHREQ=\"/get?user=jack&password=123\",1"),F("OK"),10000U);
+    fona.HTTP_POST(URI,body,bodylen);
+    fona.HTTP_POST_end();
+    // fona.HTTP_GET("/get?user=jack&password=123");
+    // fona.HTTP_GET_end();
+    /*
     int counter = 0;
-
     while (counter < 3 && !fona.postData("POST", URL, body, token, bodylen))
     {
         Serial.println(F("Failed to complete HTTP POST..."));
         counter++;
         delay(1000);
     }
-
-    // if (!fona.postData("POST", URL, body)) // Can also add authorization token parameter!
-    // Serial.println(F("Failed to complete HTTP POST..."));
+    */
 }
 
 void loopFONA()
@@ -335,7 +380,7 @@ void shutdownFONA()
     // Serial.println("Shutdown... (DISABLED)");
     fona.powerDown();
     simOff();
-    // fonaSerial.flush();
+    fonaSerial.flush();
 }
 
 boolean tryBegin(uint32_t baud)

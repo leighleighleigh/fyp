@@ -1,7 +1,7 @@
 #include <Arduino.h>
 // #include <ArduinoJson.h>
 
-void readChameleon(int pinA, int pinB, int *rawA, int *rawB, float *rawAvg, float *sensorResistance)
+void readChameleon(int pinA, int pinB, unsigned int *rawA, unsigned int *rawB, float *rawAvg, float *sensorResistance)
 {
     // ASSUMES a 10 BIT ADC RESOLUTION
 
