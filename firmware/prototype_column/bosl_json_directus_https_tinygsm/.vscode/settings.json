@@ -1,0 +1,8 @@
+{
+    "cSpell.ignoreWords": [
+        "millis"
+    ],
+    "files.associations": {
+        "*.tpp": "cpp"
+    }
+}
