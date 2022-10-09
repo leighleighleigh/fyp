@@ -1,13 +1,11 @@
 #include <Arduino.h>
 
 #define SIMCOM_7000
-#define SSL_FONA 1
 
-#include "Adafruit_FONA.h" // https://github.com/botletics/SIM7000-LTE-Shield/tree/master/Code
 // #include "ArduinoJson.h"
-#include <SoftwareSerial.h>
 // #include <RTClib.h>
-
+#include "Adafruit_FONA.h"
+#include <SoftwareSerial.h>
 
 #ifndef BOARDNAME
     #define BOARDNAME "Unknown"
@@ -16,9 +14,6 @@
 const char boardName[] = BOARDNAME;
 const char token[] = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
 const char URL[] = "***REMOVED***/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
-// const char URLBASE[] = "https://***REMOVED***";
-// const char URI[] = "/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
-
 
 #define FONA_PWRKEY 4
 #define FONA_DTR 5 // Connect with solder jumper
@@ -34,22 +29,17 @@ uint8_t type;
 uint16_t vBatt;
 
 // char PIN[5] = "1234"; // SIM card PIN
-
-// NOTE: Keep the buffer sizes as small as possible, espeially on
-// Arduino Uno which doesn't have much computing power to handle
-// large buffers. On Arduino Mega you shouldn't have to worry much.
-// char dateTimeFormat[] = "YYMMDD-hh:mm:ss";
 char dateTimeFormat[] = "YYYY-MM-DD hh:mm:ss";
 
 char timeBuff[48];
 String bootDateTime;
 
-
 // GLOBAL SENSOR READINGS
 int rawTemp, rawSoil;
 int lower_rawA, lower_rawB;
-float lower_rawAverage, lower_sensorResistance;
 int upper_rawA, upper_rawB;
+float upper_temp, lower_temp;
+float lower_rawAverage, lower_sensorResistance;
 float upper_rawAverage, upper_sensorResistance;
 
 bool netStatus();
@@ -68,7 +58,6 @@ int replacechar(char *str, char orig, char rep)
 }
 
 // void simOn();
-
 bool hasBooted = false;
 
 boolean setupFONA()
@@ -78,7 +67,7 @@ boolean setupFONA()
     delay(6000);
 
     boolean foundModule = moduleSetup();
-    if(!foundModule)
+    if (!foundModule)
     {
         return false;
     }
@@ -119,7 +108,7 @@ boolean setupFONA()
     fona.setNetworkSettings(F("mdata.net.au"));
 
     // Improve SNR time
-    fona.sendCheckReply(F("AT+CNBS=1"),F("OK"),1000U);
+    fona.sendCheckReply(F("AT+CNBS=1"), F("OK"), 1000U);
 
     fona.setHTTPSRedirect(true);
     /* MODE SELECT AND OPERATING BAND MUST OCCUR AFTER NETWORK SETTINGS CALL */
@@ -133,7 +122,7 @@ boolean setupFONA()
     // fona.setOperatingBand("CAT-M", 28);
 
     // Serial.println("set NTP");
-    fona.enableNTPTimeSync(true, F("pool.ntp.org"));
+    // fona.enableNTPTimeSync(true, F("pool.ntp.org"));
 
     // Perform first-time GPS/data setup if the shield is going to remain on,
     // otherwise these won't be enabled in loop() and it won't work!
@@ -145,31 +134,30 @@ boolean setupFONA()
     // }
     // Serial.println(F("Turned on GPS!"));
 
-
     // turn GPRS off
     // for (int i = 0; i < 3; i++)
     // {
     // if (!fona.enableGPRS(false))
     // {
-        // Serial.println(F("Failed to turn off GPRS..."));
-        // delay(2000);
+    // Serial.println(F("Failed to turn off GPRS..."));
+    // delay(2000);
     // }
     // }
 
     // turn GPRS on
-    // for (int i = 0; i < 3; i++)
-    // {
-    while (!fona.enableGPRS(true))
+    for (int i = 0; i < 3; i++)
     {
-        Serial.println(F("Failed to turn on GPRS..."));
-        delay(2000);
-        if (!fona.enableGPRS(false))
+        if (!fona.enableGPRS(true))
         {
-            Serial.println(F("Failed to turn off GPRS..."));
+            Serial.println(F("Failed to turn on GPRS..."));
             delay(2000);
+            if (!fona.enableGPRS(false))
+            {
+                Serial.println(F("Failed to turn off GPRS..."));
+                delay(2000);
+            }
         }
     }
-    // }
 
     // Connect to cell network and verify connection
     // If unsuccessful, keep retrying every 2s until a connection is made
@@ -213,42 +201,12 @@ void sendPOST()
     char body[180];
     uint32_t bodylen = 0;
 
-    // char URIARR[180];
-
     // Construct the appropriate URL's and body, depending on request type
     fona.getBattVoltage(&vBatt);
 
-    // POST request
-    // sprintf(URL, "http://dweet.io/dweet/for/%s", imei);
-    // sprintf(body, "{\"temp\":%s,\"batt\":%i}", tempBuff, battLevel);
-    // Put URL into URL
-    // sprintf(URL, "http://demo.thingsboard.io/api/v1/%s/telemetry", token);
-    // sprintf(URL, "http://***REMOVED***/items/column_sensors?access_token=%s",token);
+    // POST request, csv-in-JSON
+    bodylen = sprintf(body, "{\"data\":\"%s,%s,%u,20%s,%d,%d,%s,%d,%d,%d,%s,%d,%s,%s,%s,0.0,0.0,%s\"}\0", boardName, imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(lower_temp).c_str(), String(upper_temp).c_str(),String(rawTemp).c_str(), String(rawSoil).c_str());
 
-    // First part of JSON data payload
-    // Double string escape is needed on the timeBuff entry
-    bodylen = sprintf(body, "{\"data\":\"%s,%s,%u,20%s,%d,%d,%s,%d,%d,%d,%s,%d,0.0,0.0,%s,0.0,0.0,%s\"}\0", boardName, imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(rawTemp).c_str(), String(rawSoil).c_str());
-    // sprintf(URIARR, "%s", URI);
-
-    // Start HTTPS connection
-    
-    // Connect to server
-    // If https:// is used, #define SSL_FONA 1 in Adafruit_FONA.h
-    // if (! fona.HTTP_connect(URLBASE)) {
-        // Serial.println(F("Failed to connect to server..."));
-    // }else{
-        // Serial.print("Connected to ");
-        // Serial.println(URLBASE);
-    // }
-
-    // Add headers as needed
-    // fona.HTTP_addHeader("User-Agent", "SIM7000", 7);
-    // fona.HTTP_addHeader("Cache-control", "no-cache", 8);
-    // fona.HTTP_addHeader("Connection", "keep-alive", 10);
-    // fona.HTTP_addHeader("Accept", "*/*", 3);
-    // fona.HTTP_addHeader("Content-Type", "application/json", 16);
-
-    // fona.HTTP_POST(URI, body, strlen(body));
 
     int counter = 0;
 
@@ -258,14 +216,10 @@ void sendPOST()
         counter++;
         delay(1000);
     }
-
-    // if (!fona.postData("POST", URL, body)) // Can also add authorization token parameter!
-    // Serial.println(F("Failed to complete HTTP POST..."));
 }
 
 void loopFONA()
 {
-
     // Open wireless connection if not already activated
     if (!fona.wirelessConnStatus())
     {
@@ -282,49 +236,7 @@ void loopFONA()
     }
 
     sendPOST();
-
-    // // If not already connected, connect to MQTT
-    // if (!fona.MQTT_connectionStatus())
-    // {
-    //     // Set up MQTT parameters (see MQTT app note for explanation of parameter values)
-    //     fona.MQTT_setParameter("URL", AIO_SERVER, AIO_SERVERPORT);
-    //     // Set up MQTT username and password if necessary
-    //     fona.MQTT_setParameter("USERNAME", AIO_USERNAME);
-    //     fona.MQTT_setParameter("PASSWORD", AIO_KEY);
-    //     //    fona.MQTTsetParameter("KEEPTIME", 30); // Time to connect to server, 60s by default
-
-    //     Serial.println(F("Connecting to MQTT broker..."));
-    //     if (!fona.MQTT_connect(true))
-    //     {
-    //         Serial.println(F("Failed to connect to broker!"));
-    //     }
-    // }
-    // else
-    // {
-    //     Serial.println(F("Already connected to MQTT server!"));
-    // }
-
-    // // Now publish all the GPS and temperature data to their respective topics!
-    // // Parameters for MQTT_publish: Topic, message (0-512 bytes), message length, QoS (0-2), retain (0-1)
-    // if (!fona.MQTT_publish("leighleighleigh/feeds/bosl-mqtt", locBuff, strlen(locBuff), 1, 0))
-    //     Serial.println(F("Failed to publish!")); // Send GPS location
-
-    // Disconn
-    // fona.MQTT_connect(false);
-    fona.openWirelessConnection(false);
 }
-
-// void simOn()
-// {
-//     // powers on SIM7000
-
-//     // do check for if sim is on
-//     pinMode(FONA_PWRKEY, OUTPUT);
-//     digitalWrite(FONA_PWRKEY, LOW);
-//     delay(1000); // For SIM7000
-//     digitalWrite(FONA_PWRKEY, HIGH);
-//     delay(4000);
-// }
 
 void simOff()
 {
@@ -337,10 +249,8 @@ void simOff()
 
 void shutdownFONA()
 {
-    // Serial.println("Shutdown... (DISABLED)");
-    fona.powerDown();
+    // fona.powerDown();
     simOff();
-    // fonaSerial.flush();
 }
 
 boolean tryBegin(uint32_t baud)
@@ -386,7 +296,9 @@ boolean moduleSetup()
             fona.setBaudrate(9600);
             // Now re-start at 9600
             found = tryBegin(9600);
-        }else{
+        }
+        else
+        {
             Serial.println("COULDNT FIND FONA!");
             return false;
         }
