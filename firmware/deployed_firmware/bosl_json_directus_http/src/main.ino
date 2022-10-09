@@ -1,6 +1,7 @@
 #include <Arduino.h>
 // #include <ArduinoJson.h>
 #include "chameleon.h"
+#include "ds18b20.h"
 #include "smt.h"
 #include <LowPower.h>
 #include <avr/wdt.h>
@@ -20,25 +21,45 @@
 #define CHAMELEON_LOWER_A A4
 #define CHAMELEON_LOWER_B A5
 
+
+uint8_t tempChannelA, tempChannelB;
+
 extern volatile unsigned long timer0_millis;
 
-void reboot()
-{
-  wdt_disable();
-  wdt_enable(WDTO_15MS);
-  while (1)
-  {
-  }
-}
+// void reboot()
+// {
+//   wdt_disable();
+//   wdt_enable(WDTO_15MS);
+//   while (1)
+//   {
+//   }
+// }
 
 void setup()
 {
   Serial.begin(115200);
   Serial.println("BOOT!");
+  // Start up the library 
+  sensors.begin(); 
+  Serial.print("Temperature sensors initialising...");
+
+  uint8_t sensorCount = sensors.getDeviceCount();
+  Serial.print("Sensors found: ");
+  Serial.println(sensorCount);
+
+  // Get sensor addresses, so that calls to read them are fast!
+  getAddresses(&tempChannelA,&tempChannelB);
+  Serial.print("Address A: ");
+  Serial.println(tempChannelA);
+  Serial.print("Address B: ");
+  Serial.println(tempChannelB);
 }
 
 void Sleepy(uint16_t tsleep)
-{ // Sleep Time in seconds
+{ 
+  // Sleep Time in seconds
+  fonaSerial.flush(); // must run before going to sleep
+  Serial.flush(); // ensures that all messages have sent through serial before arduino sleeps
 
   LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF); // 8 seconds dosen't work on the 8mhz
   // advance millis timer as it is paused in sleep
@@ -60,6 +81,7 @@ void Sleepy(uint16_t tsleep)
 
 void loop()
 {
+
   pinMode(SMT_TMP, INPUT);
   pinMode(SMT_SOIL, INPUT);
   // Setup FONA
@@ -68,6 +90,7 @@ void loop()
   if (!setupGood)
   {
     Serial.println("restarting");
+    delay(3000);
     return;
   }
 
@@ -79,6 +102,9 @@ void loop()
   // Read lower chameleon
   readChameleon(CHAMELEON_LOWER_A, CHAMELEON_LOWER_B, &lower_rawA, &lower_rawB, &lower_rawAverage, &lower_sensorResistance);
 
+  // Read DS18B20 temperature probe
+  readTemperatures(tempChannelA,tempChannelB,&upper_temp,&lower_temp);
+
   // loopSIM();
   loopFONA();
 
@@ -86,7 +112,8 @@ void loop()
   shutdownFONA();
 
   // Sleep for 60 seconds in low-power mode
-  Sleepy(180);
+  delay(3000);
+  Sleepy(300);
   // reboot();
   // delay(30000);
 }
