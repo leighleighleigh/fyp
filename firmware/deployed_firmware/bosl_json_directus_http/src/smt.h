@@ -5,8 +5,8 @@ void readSMT(int pinTemp, int pinoSoil, int *rawTemp, int *rawSoil)
 {
     // ASSUMES a 10 BIT ADC RESOLUTION
     // Place into forward current mode
-    pinMode(pinTemp, INPUT);
-    pinMode(pinoSoil, INPUT);
+    pinMode(pinTemp,  INPUT);
+    pinMode(pinoSoil,  INPUT);
 
     *rawTemp = analogRead(pinTemp);
     *rawSoil = analogRead(pinoSoil);

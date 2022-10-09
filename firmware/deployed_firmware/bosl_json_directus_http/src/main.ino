@@ -22,7 +22,6 @@
 #define CHAMELEON_LOWER_B A5
 
 
-uint8_t tempChannelA, tempChannelB;
 
 extern volatile unsigned long timer0_millis;
 
@@ -39,20 +38,6 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println("BOOT!");
-  // Start up the library 
-  sensors.begin(); 
-  Serial.print("Temperature sensors initialising...");
-
-  uint8_t sensorCount = sensors.getDeviceCount();
-  Serial.print("Sensors found: ");
-  Serial.println(sensorCount);
-
-  // Get sensor addresses, so that calls to read them are fast!
-  getAddresses(&tempChannelA,&tempChannelB);
-  Serial.print("Address A: ");
-  Serial.println(tempChannelA);
-  Serial.print("Address B: ");
-  Serial.println(tempChannelB);
 }
 
 void Sleepy(uint16_t tsleep)
@@ -81,9 +66,32 @@ void Sleepy(uint16_t tsleep)
 
 void loop()
 {
+  initTemperatures();
+  // Read DS18B20 temperature probe
+  // lower is index 0, upper is index 1
+  readTemperatures(&lower_temp,&upper_temp);
+  Serial.print("upper_temp: ");
+  Serial.println(upper_temp);
+  Serial.print("lower_temp: ");
+  Serial.println(lower_temp);
 
-  pinMode(SMT_TMP, INPUT);
-  pinMode(SMT_SOIL, INPUT);
+  // Read SMT100
+  // for(int i =0; i<10; i++){
+    // Read using regular read method
+    readSMT(SMT_TMP, SMT_SOIL, &rawTemp, &rawSoil);
+    Serial.print("upper_vwc: ");
+    Serial.println(rawSoil);
+  // }
+
+  // Read upper chameleon
+  readChameleon(CHAMELEON_UPPER_A, CHAMELEON_UPPER_B, &upper_rawA, &upper_rawB, &upper_rawAverage, &upper_sensorResistance);
+  // Read lower chameleon
+  readChameleon(CHAMELEON_LOWER_A, CHAMELEON_LOWER_B, &lower_rawA, &lower_rawB, &lower_rawAverage, &lower_sensorResistance);
+
+  // // delay(100);
+  // return;
+
+
   // Setup FONA
   // setupSIM();
   boolean setupGood = setupFONA();
@@ -94,16 +102,6 @@ void loop()
     return;
   }
 
-  // Read SMT100
-  // Read using regular read method
-  readSMT(SMT_TMP, SMT_SOIL, &rawTemp, &rawSoil);
-  // Read upper chameleon
-  readChameleon(CHAMELEON_UPPER_A, CHAMELEON_UPPER_B, &upper_rawA, &upper_rawB, &upper_rawAverage, &upper_sensorResistance);
-  // Read lower chameleon
-  readChameleon(CHAMELEON_LOWER_A, CHAMELEON_LOWER_B, &lower_rawA, &lower_rawB, &lower_rawAverage, &lower_sensorResistance);
-
-  // Read DS18B20 temperature probe
-  readTemperatures(tempChannelA,tempChannelB,&upper_temp,&lower_temp);
 
   // loopSIM();
   loopFONA();
