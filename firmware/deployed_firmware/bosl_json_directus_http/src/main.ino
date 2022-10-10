@@ -81,6 +81,8 @@ void loop()
     readSMT(SMT_TMP, SMT_SOIL, &rawTemp, &rawSoil);
     Serial.print("upper_vwc: ");
     Serial.println(rawSoil);
+    Serial.print("upper_temp: ");
+    Serial.println(rawTemp);
   // }
 
   // Read upper chameleon
@@ -110,8 +112,8 @@ void loop()
   shutdownFONA();
 
   // Sleep for 60 seconds in low-power mode
-  delay(3000);
-  Sleepy(300);
+  delay(1000);
+  Sleepy(600);
   // reboot();
   // delay(30000);
 }
