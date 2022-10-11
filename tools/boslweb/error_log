@@ -1,0 +1,71 @@
+[11-Oct-2022 22:48:14 UTC] PHP Warning:  fputcsv() expects parameter 2 to be array, object given in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 80
+[11-Oct-2022 22:48:24 UTC] PHP Warning:  fputcsv() expects parameter 2 to be array, object given in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 80
+[11-Oct-2022 22:49:16 UTC] PHP Warning:  fputcsv() expects parameter 2 to be array, object given in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 80
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 79
+[11-Oct-2022 22:55:00 UTC] PHP Warning:  fputcsv() expects parameter 2 to be array, object given in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 92
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 22:58:36 UTC] PHP Notice:  Array to string conversion in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 82
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:01:34 UTC] PHP Notice:  Array to string conversion in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 82
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Warning:  Invalid argument supplied for foreach() in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 78
+[11-Oct-2022 23:03:09 UTC] PHP Notice:  Array to string conversion in /home/boslcoma/public_html/IoT/wsudwatch/FYP_SGI/log.php on line 83
