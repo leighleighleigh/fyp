@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <SD.h>
+#include <ArduinoJson.h>
 
 // #define PIN_SPI_CS 13
 
