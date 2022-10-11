@@ -83,6 +83,10 @@ boolean setupFONA()
     Serial.print(vBatt);
     Serial.println("mV");
 
+    #if !USE_FONA
+        return true;
+    #endif
+
     Serial.println("setFunc 0");
     fona.setFunctionality(0);
     delay(3000);
@@ -93,11 +97,10 @@ boolean setupFONA()
 
     Serial.println("setFunc 6...");
     fona.setFunctionality(6);
-    delay(10000);
+    delay(30000);
 
     fona.sendCheckReply(F("ATE0"),F("OK"),500);
     fona.sendCheckReply(F("ATE0"),F("OK"),500);
-
     fona.sendCheckReply(F("ATE0"),F("OK"),500);
     fona.sendCheckReply(F("ATE0"),F("OK"),500);
 
@@ -151,10 +154,6 @@ boolean setupFONA()
     // delay(2000);
     // }
     // }
-
-    #if !USE_FONA
-        return true;
-    #endif
 
     // turn GPRS on
     while (!fona.enableGPRS(true))

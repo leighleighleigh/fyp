@@ -7,12 +7,12 @@
 #include <avr/wdt.h>
 
 // #define DEBUG Serial
-#define USE_FONA 1
+#define USE_FONA 0
 
 #include <utils.h>
 
 #include "fona.h"
-// #include <microsd.h>
+#include <microsd.h>
 
 // SMT100 analog inputs
 #define SMT_TMP A0
@@ -25,7 +25,6 @@
 #define CHAMELEON_LOWER_B A5
 
 extern volatile unsigned long timer0_millis;
-
 // void reboot()
 // {
 //   wdt_disable();
@@ -40,7 +39,7 @@ void setup()
   Serial.begin(115200);
   Serial.println("BOOT!");
 
-  // setupSD();
+  setupSD();
 }
 
 void Sleepy(uint16_t tsleep)
@@ -91,6 +90,7 @@ void loop()
 
 // Setup FONA
 // setupSIM();
+#if USE_FONA
   boolean setupGood = setupFONA();
   // Returns false if we couldn't find the fona
   if (!setupGood)
@@ -100,12 +100,40 @@ void loop()
     return;
   }
 
-#if USE_FONA
   // loopSIM();
   loopFONA();
 
   // Turn off sim
   shutdownFONA();
+#else
+  // Log to SD!
+  int heapfree = freeMemory();
+  Serial.print("Free heap: ");
+  Serial.println(heapfree);
+  DynamicJsonDocument doc(heapfree/2);
+  doc["hello"] = "world";
+  doc["test"] = "askjas";
+  doc["asdasd"] = "1231231";
+  doc["millis"] = millis();
+  serializeJson(doc,Serial);
+
+  Serial.print("Free heap: ");
+  Serial.println(freeMemory());
+  doc.shrinkToFit();
+  Serial.print("Free heap: ");
+  Serial.println(freeMemory());
+
+  if(sdFound)
+  {
+    File file = SD.open("arduino.txt", FILE_WRITE);
+    serializeJson(doc, file);
+    file.write("\n");
+    file.close();
+    Serial.print("Free heap: ");
+    Serial.println(freeMemory());
+  }
+
+
 #endif
 
   // Sleep for 60 seconds in low-power mode
