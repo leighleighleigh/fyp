@@ -2033,32 +2033,32 @@ boolean Adafruit_FONA::postData(const char *request_type, const char *URL, JsonO
     // HTTP_addHeader("Accept", "*/*", 3);
     // fona.HTTP_addHeader("Content-Type", "application/json", 16);
 
-    if (strlen(token) > 0) {
-      char tokenStr[strlen(token) + 55];
+    // if (strlen(token) > 0) {
+    //   char tokenStr[strlen(token) + 55];
 
-      sprintf(tokenStr, "AT+HTTPPARA=\"USERDATA\",\"Authorization: Bearer %s\"", token);
-      // sprintf(tokenStr, "AT+HTTPPARA=\"USERDATA\",\"Authorization: Bearer %s,User-Agent: SIM7000,Connection: keep-alive\"", token);
+    //   sprintf(tokenStr, "AT+HTTPPARA=\"USERDATA\",\"Authorization: Bearer %s\"", token);
+    //   // sprintf(tokenStr, "AT+HTTPPARA=\"USERDATA\",\"Authorization: Bearer %s,User-Agent: SIM7000,Connection: keep-alive\"", token);
 
-      if (! sendCheckReply(tokenStr, ok_reply, 10000))
-        return false;
-    }
+    //   if (! sendCheckReply(tokenStr, ok_reply, 10000))
+    //     return false;
+    // }
 
     char dataBuff[sizeof(bodylen) + 20];
 
     sprintf(dataBuff, "AT+HTTPDATA=%lu,9900", (long unsigned int)bodylen);
-    if (! sendCheckReply(dataBuff, "DOWNLOAD", 10000))
+    if (! sendCheckReply(dataBuff, "DOWNLOAD", 30000))
       return false;
 
     delay(100); // Needed for fast baud rates (ex: 115200 baud with SAMD21 hardware serial)
 
-    if (! sendCheckReply(body, ok_reply, 10000))
+    if (! sendCheckReply(body, ok_reply, 30000))
       return false;
 
-    if (! sendCheckReply(F("AT+HTTPACTION=1"), ok_reply, 10000))
+    if (! sendCheckReply(F("AT+HTTPACTION=1"), ok_reply, 30000))
       return false;
   }
   else if (strcmp(request_type, "POST") == 0 && bodylen == 0) { // POST with query parameters
-    if (! sendCheckReply(F("AT+HTTPACTION=1"), ok_reply, 10000))
+    if (! sendCheckReply(F("AT+HTTPACTION=1"), ok_reply, 30000))
       return false;
   }
   else if (strcmp(request_type, "HEAD") == 0) {

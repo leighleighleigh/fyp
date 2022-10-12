@@ -69,15 +69,21 @@ void Sleepy(uint16_t tsleep)
 
 void sendPOST()
 {
-    StaticJsonDocument<200> doc;
+    StaticJsonDocument<300> doc;
     // deserializeJson(doc, jsonSchema);
     // Convert the document to an object
     JsonObject obj = doc.to<JsonObject>();
-    // Set values
+
     obj[F("device_name")] = boardName;
     obj[F("imei")] = imei;
-    obj[F("battery_mv")] = vBatt;
-    obj[F("bootup_timestamp")] = bootDateTime;
+    obj[F("batt_mv")] = vBatt;
+    obj[F("uptime_s")] = millis()/1000;
+    obj[F("chmln_top_ohms")] = upper_sensorResistance;
+    obj[F("chmln_bot_ohms")] = lower_sensorResistance;
+    obj[F("ds18b20_top_temp_c")] = upper_temp;
+    obj[F("ds18b20_bot_temp_c")] = lower_temp;
+    obj[F("smt_vwc")] = rawSoil;
+    obj[F("smt_temp_c")] = rawTemp;
 
     int counter = 0;
     while (counter < 3 && !fona.postData("POST", URL, obj, token))

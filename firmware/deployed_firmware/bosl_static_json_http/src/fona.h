@@ -1,7 +1,7 @@
 #include <Arduino.h>
+
 #define SIMCOM_7000
-// #include "ArduinoJson.h"
-// #include <RTClib.h>
+
 #include "Adafruit_FONA.h"
 #include <SoftwareSerial.h>
 
@@ -27,6 +27,8 @@ const char URL[] = SERVER;
 #define FONA_BAUD 9600
 // What baud to we assume is default
 #define FONA_DEFAULT_BAUD 115200
+// Reset fully on each reboot
+#define FONA_RESET_ON_FIRST_BOOT 0
 
 #define FONA_PWRKEY 4
 #define FONA_DTR 5 // Connect with solder jumper
@@ -40,12 +42,10 @@ Adafruit_FONA_LTE fona = Adafruit_FONA_LTE();
 char imei[16] = {0}; // Use this for device ID
 uint8_t type;
 uint16_t vBatt;
+char bootDateTime[] = "YYYY-MM-DD hh:mm:ss";
 
 // char PIN[5] = "1234"; // SIM card PIN
-char dateTimeFormat[] = "YYYY-MM-DD hh:mm:ss";
-
-char timeBuff[48];
-String bootDateTime;
+// char dateTimeFormat[] = "YYYY-MM-DD hh:mm:ss";
 
 bool netStatus();
 boolean moduleSetup();
@@ -91,6 +91,7 @@ boolean setupFONA()
     fona.setFunctionality(1);
     delay(3000);
 
+#if FONA_RESET_ON_FIRST_BOOT
     if (!hasBooted)
     {
         Serial.println("setFunc 6...");
@@ -105,6 +106,7 @@ boolean setupFONA()
         fona.setFunctionality(1);
         delay(3000);
     }
+#endif
 
     // // Turn off echo
     // fona.sendCheckReply(F("ATE0"),F("OK"),1000);
@@ -120,7 +122,7 @@ boolean setupFONA()
     // Improve SNR time
     fona.sendCheckReply(F("AT+CNBS=1"), F("OK"), 1000U);
 
-    fona.setHTTPSRedirect(true);
+    fona.setHTTPSRedirect(false);
     /* MODE SELECT AND OPERATING BAND MUST OCCUR AFTER NETWORK SETTINGS CALL */
     // fona.setPreferredMode(51); // GSM+LTE ONLY
     // fona.setPreferredLTEMode(1); // CAT-M ONLY
@@ -132,7 +134,7 @@ boolean setupFONA()
     // fona.setOperatingBand("CAT-M", 28);
 
     // Serial.println("set NTP");
-    // fona.enableNTPTimeSync(true, F("pool.ntp.org"));
+    fona.enableNTPTimeSync(true, F("pool.ntp.org"));
 
     // Perform first-time GPS/data setup if the shield is going to remain on,
     // otherwise these won't be enabled in loop() and it won't work!
@@ -185,10 +187,10 @@ boolean setupFONA()
     // READ TIME
     if (!hasBooted)
     {
+        char timeBuff[48];
         fona.getTime(timeBuff, 48);
         // Replace quotes with spaces
         replacechar(timeBuff, '\"', ' ');
-
         Serial.print("Network time: ");
         Serial.println(timeBuff);
 
@@ -199,9 +201,9 @@ boolean setupFONA()
         unsigned int tsIndex = bt.indexOf('+');
         String btc = bt.substring(0, tsIndex);
         btc.trim();
-        bootDateTime = btc;
         Serial.print("Cleaned boot time: ");
         Serial.println(btc);
+        sprintf(bootDateTime, "20%s", btc.c_str());
         hasBooted = true;
     }
 
