@@ -29,12 +29,20 @@ function parseJSONPayload()
     $json = file_get_contents('php://input');
     // Converts it into a PHP object
     $data = json_decode($json,true);
+
     // SCHEMA VALIDATION
     if ( ! isset($data['device_name']) )
     {
         http_response_code(400);
         exit("device_name key is required");
     }
+
+    // ADD DATE-CREATED FIELD
+    // This is more robust than relying on the modem-reported value
+    date_default_timezone_set("Australi/Melbourne");
+    $time_in_Detroit = date('Y-m-d H:i:s', time());
+    $utc_time = gmdate("Y-m-d  H:i:s");
+    $data["date_created_utc"] = $utc_time;
 
     // Return payload object
     return $data;
