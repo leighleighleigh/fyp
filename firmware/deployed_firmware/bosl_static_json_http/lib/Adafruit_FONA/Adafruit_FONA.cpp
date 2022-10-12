@@ -1977,6 +1977,119 @@ boolean Adafruit_FONA::wirelessConnStatus(void) {
   return true;
 }
 
+boolean Adafruit_FONA::postData(const char *request_type, const char *URL, JsonObject& body, const char *token) {
+  // NOTE: Need to open socket/enable GPRS before using this function
+  // char auxStr[64];
+
+  // Make sure HTTP service is terminated so initialization will run
+  sendCheckReply(F("AT+HTTPTERM"), ok_reply, 10000);
+
+  // Initialize HTTP service
+  if (! sendCheckReply(F("AT+HTTPINIT"), ok_reply, 10000))
+    return false;
+
+  // Set HTTP parameters
+  if (! sendCheckReply(F("AT+HTTPPARA=\"CID\",1"), ok_reply, 10000))
+    return false;
+
+
+  // sendCheckReply(F("AT+SHSSL=1,\"\""), ok_reply, 10000);
+  // HTTP_para(F("REDIR"), 1);
+  // sendCheckReply(F("AT+CSSLCFG=\"sslversion\",1,3"), ok_reply);
+  // sendCheckReply(F("AT+CASSLCFG=0,\"protocal\",0"), ok_reply);
+  // sendCheckReply(F("AT+CASSLCFG=0,\"crindex\",0"), ok_reply);
+
+  // Specify URL
+  char urlBuff[strlen(URL) + 22];
+
+  sprintf(urlBuff, "AT+HTTPPARA=\"URL\",\"%s\"", URL);
+
+  if (! sendCheckReply(urlBuff, ok_reply, 10000))
+    return false;
+
+  // Perform request based on specified request Type
+  uint32_t bodylen = measureJson(body);
+
+  if (strcmp(request_type, "GET") == 0) {
+    if (! sendCheckReply(F("AT+HTTPACTION=0"), ok_reply, 10000))
+      return false;
+  }
+  else if (strcmp(request_type, "POST") == 0 && bodylen > 0 ) { // POST with content body
+    if (! sendCheckReply(F("AT+HTTPPARA=\"CONTENT\",\"application/json\""), ok_reply, 10000))
+      return false;
+
+    // if (! sendCheckReply(F("AT+SHAHEAD=\"User-Agent\",\"SIM7000\""), ok_reply, 10000))
+      // return false;
+
+    // if (! sendCheckReply(F("AT+SHAHEAD=\"Connection\",\"keep-alive\""), ok_reply, 10000))
+      // return false;
+
+    // if (! sendCheckReply(F("AT+HTTPPARA=\"USERDATA\",\"User-Agent: SIM7000\""), ok_reply, 10000))
+      // return false;
+
+    // HTTP_addHeader("User-Agent", "SIM7000", 7);
+    // HTTP_addHeader("Cache-control", "no-cache", 8);
+    // HTTP_addHeader("Connection", "keep-alive", 10);
+    // HTTP_addHeader("Accept", "*/*", 3);
+    // fona.HTTP_addHeader("Content-Type", "application/json", 16);
+
+    if (strlen(token) > 0) {
+      char tokenStr[strlen(token) + 55];
+
+      sprintf(tokenStr, "AT+HTTPPARA=\"USERDATA\",\"Authorization: Bearer %s\"", token);
+      // sprintf(tokenStr, "AT+HTTPPARA=\"USERDATA\",\"Authorization: Bearer %s,User-Agent: SIM7000,Connection: keep-alive\"", token);
+
+      if (! sendCheckReply(tokenStr, ok_reply, 10000))
+        return false;
+    }
+
+    char dataBuff[sizeof(bodylen) + 20];
+
+    sprintf(dataBuff, "AT+HTTPDATA=%lu,9900", (long unsigned int)bodylen);
+    if (! sendCheckReply(dataBuff, "DOWNLOAD", 10000))
+      return false;
+
+    delay(100); // Needed for fast baud rates (ex: 115200 baud with SAMD21 hardware serial)
+
+    if (! sendCheckReply(body, ok_reply, 10000))
+      return false;
+
+    if (! sendCheckReply(F("AT+HTTPACTION=1"), ok_reply, 10000))
+      return false;
+  }
+  else if (strcmp(request_type, "POST") == 0 && bodylen == 0) { // POST with query parameters
+    if (! sendCheckReply(F("AT+HTTPACTION=1"), ok_reply, 10000))
+      return false;
+  }
+  else if (strcmp(request_type, "HEAD") == 0) {
+    if (! sendCheckReply(F("AT+HTTPACTION=2"), ok_reply, 10000))
+      return false;
+  }
+
+  // Parse response status and size
+  uint16_t status, datalen;
+  readline(10000);
+  if (! parseReply(F("+HTTPACTION:"), &status, ',', 1))
+    return false;
+  if (! parseReply(F("+HTTPACTION:"), &datalen, ',', 2))
+    return false;
+
+  DEBUG_PRINT("HTTP status: "); DEBUG_PRINTLN(status);
+  DEBUG_PRINT("Data length: "); DEBUG_PRINTLN(datalen);
+
+  if (status != 200) return false;
+
+  getReply(F("AT+HTTPREAD"));
+
+  readline(10000);
+  DEBUG_PRINT("\t<--- "); DEBUG_PRINTLN(replybuffer); // Print out server reply
+
+  // Terminate HTTP service
+  sendCheckReply(F("AT+HTTPTERM"), ok_reply, 10000);
+
+  return true;
+}
+
 boolean Adafruit_FONA::postData(const char *request_type, const char *URL, const char *body, const char *token, uint32_t bodylen) {
   // NOTE: Need to open socket/enable GPRS before using this function
   // char auxStr[64];
@@ -1993,9 +2106,9 @@ boolean Adafruit_FONA::postData(const char *request_type, const char *URL, const
     return false;
 
 
-  sendCheckReply(F("AT+SHSSL=1,\"\""), ok_reply, 10000);
-  HTTP_para(F("REDIR"), 1);
-  sendCheckReply(F("AT+CSSLCFG=\"sslversion\",1,3"), ok_reply);
+  // sendCheckReply(F("AT+SHSSL=1,\"\""), ok_reply, 10000);
+  // HTTP_para(F("REDIR"), 1);
+  // sendCheckReply(F("AT+CSSLCFG=\"sslversion\",1,3"), ok_reply);
   // sendCheckReply(F("AT+CASSLCFG=0,\"protocal\",0"), ok_reply);
   // sendCheckReply(F("AT+CASSLCFG=0,\"crindex\",0"), ok_reply);
 
@@ -3570,6 +3683,24 @@ uint8_t Adafruit_FONA::getReply(const char *send, uint16_t timeout) {
   return l;
 }
 
+uint8_t Adafruit_FONA::getReply(JsonObject& send, uint16_t timeout) {
+  flushInput();
+
+  DEBUG_PRINT(F("\t---> ")); DEBUG_PRINTLN("JsonObject");
+  DEBUG_PRINT(F("\t---> ")); serializeJson(send, DebugStream); DEBUG_PRINTLN("");
+
+  // mySerial->println(send);
+  size_t outBytes = serializeJson(send, *(mySerial));
+  mySerial->println("");
+  DEBUG_PRINT(F("\t---> ")); DEBUG_PRINT("sent "); DEBUG_PRINT(outBytes); DEBUG_PRINTLN(" bytes");
+
+  uint8_t l = readline(timeout);
+
+  DEBUG_PRINT (F("\t<--- ")); DEBUG_PRINTLN(replybuffer);
+
+  return l;
+}
+
 uint8_t Adafruit_FONA::getReply(FONAFlashStringPtr send, uint16_t timeout) {
   flushInput();
 
@@ -3687,12 +3818,18 @@ boolean Adafruit_FONA::sendCheckReply(FONAFlashStringPtr send, FONAFlashStringPt
   return (prog_char_strcmp(replybuffer, (prog_char*)reply) == 0);
 }
 
+
 boolean Adafruit_FONA::sendCheckReply(const char* send, FONAFlashStringPtr reply, uint16_t timeout) {
   if (! getReply(send, timeout) )
     return false;
   return (prog_char_strcmp(replybuffer, (prog_char*)reply) == 0);
 }
 
+boolean Adafruit_FONA::sendCheckReply(JsonObject& send, FONAFlashStringPtr reply, uint16_t timeout) {
+  if (! getReply(send, timeout) )
+    return false;
+  return (prog_char_strcmp(replybuffer, (prog_char*)reply) == 0);
+}
 
 // Send prefix, suffix, and newline.  Verify FONA response matches reply parameter.
 boolean Adafruit_FONA::sendCheckReply(FONAFlashStringPtr prefix, char *suffix, FONAFlashStringPtr reply, uint16_t timeout) {

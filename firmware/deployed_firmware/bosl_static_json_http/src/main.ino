@@ -1,18 +1,12 @@
 #include <Arduino.h>
-// #include <ArduinoJson.h>
+#include <ArduinoJson.h>
 #include "chameleon.h"
 #include "ds18b20.h"
 #include "smt.h"
 #include <LowPower.h>
 #include <avr/wdt.h>
-
-// #define DEBUG Serial
-#define USE_FONA 0
-
 #include <utils.h>
-
 #include "fona.h"
-#include <microsd.h>
 
 // SMT100 analog inputs
 #define SMT_TMP A0
@@ -25,6 +19,15 @@
 #define CHAMELEON_LOWER_B A5
 
 extern volatile unsigned long timer0_millis;
+
+// GLOBAL SENSOR READINGS
+int rawTemp, rawSoil;
+int lower_rawA, lower_rawB;
+int upper_rawA, upper_rawB;
+float upper_temp, lower_temp;
+float lower_rawAverage, lower_sensorResistance;
+float upper_rawAverage, upper_sensorResistance;
+
 // void reboot()
 // {
 //   wdt_disable();
@@ -38,8 +41,6 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println("BOOT!");
-
-  setupSD();
 }
 
 void Sleepy(uint16_t tsleep)
@@ -66,31 +67,43 @@ void Sleepy(uint16_t tsleep)
   }
 }
 
+void sendPOST()
+{
+    StaticJsonDocument<200> doc;
+    // deserializeJson(doc, jsonSchema);
+    // Convert the document to an object
+    JsonObject obj = doc.to<JsonObject>();
+    // Set values
+    obj[F("device_name")] = boardName;
+    obj[F("imei")] = imei;
+    obj[F("battery_mv")] = vBatt;
+    obj[F("bootup_timestamp")] = bootDateTime;
+
+    int counter = 0;
+    while (counter < 3 && !fona.postData("POST", URL, obj, token))
+    {
+        Serial.println(F("Failed to complete HTTP POST..."));
+        counter++;
+        delay(1000);
+    }
+}
+
 void loop()
 {
   initTemperatures();
   // Read DS18B20 temperature probe
-  // lower is index 0, upper is index 1
+  // lower is index 0, upper is index 1.
+  // This is ensured by cable length of the sensors - with the lower sensor having a shorter cable.
+  // Read digital temperature probes
   readTemperatures(&lower_temp, &upper_temp);
-  Serial.print("upper_temp: ");
-  Serial.println(upper_temp);
-  Serial.print("lower_temp: ");
-  Serial.println(lower_temp);
-
+  // Read SMT100 analogue values
   readSMT(SMT_TMP, SMT_SOIL, &rawTemp, &rawSoil);
-  Serial.print("upper_vwc: ");
-  Serial.println(rawSoil);
-  Serial.print("upper_temp: ");
-  Serial.println(rawTemp);
-
   // Read upper chameleon
   readChameleon(CHAMELEON_UPPER_A, CHAMELEON_UPPER_B, &upper_rawA, &upper_rawB, &upper_rawAverage, &upper_sensorResistance);
   // Read lower chameleon
   readChameleon(CHAMELEON_LOWER_A, CHAMELEON_LOWER_B, &lower_rawA, &lower_rawB, &lower_rawAverage, &lower_sensorResistance);
 
-// Setup FONA
-// setupSIM();
-#if USE_FONA
+  // Setup FONA
   boolean setupGood = setupFONA();
   // Returns false if we couldn't find the fona
   if (!setupGood)
@@ -100,47 +113,15 @@ void loop()
     return;
   }
 
-  // loopSIM();
-  loopFONA();
+  // Send the POST
+  sendPOST();
 
   // Turn off sim
   shutdownFONA();
-#else
-  // Log to SD!
-  int heapfree = freeMemory();
-  Serial.print("Free heap: ");
-  Serial.println(heapfree);
-  DynamicJsonDocument doc(heapfree/2);
-  doc["hello"] = "world";
-  doc["test"] = "askjas";
-  doc["asdasd"] = "1231231";
-  doc["millis"] = millis();
-  serializeJson(doc,Serial);
-
-  Serial.print("Free heap: ");
-  Serial.println(freeMemory());
-  doc.shrinkToFit();
-  Serial.print("Free heap: ");
-  Serial.println(freeMemory());
-
-  if(sdFound)
-  {
-    File file = SD.open("arduino.txt", FILE_WRITE);
-    serializeJson(doc, file);
-    file.write("\n");
-    file.close();
-    Serial.print("Free heap: ");
-    Serial.println(freeMemory());
-  }
-
-
-#endif
 
   // Sleep for 60 seconds in low-power mode
   delay(1000);
   Serial.println("Sleeping...");
   Sleepy(60);
   Serial.println("...waking up!!!");
-  // reboot();
-  // delay(30000);
 }

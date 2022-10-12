@@ -20,6 +20,7 @@
 #ifndef ADAFRUIT_FONA_H
 #define ADAFRUIT_FONA_H
 
+#include "ArduinoJson.h"
 #include "includes/FONAConfig.h"
 #include "includes/FONAExtIncludes.h"
 #include "includes/platform/FONAPlatform.h"
@@ -186,6 +187,7 @@ class Adafruit_FONA : public FONAStreamType {
   boolean getGSMLoc(float *lat, float *lon);
   void setNetworkSettings(FONAFlashStringPtr apn, FONAFlashStringPtr username=0, FONAFlashStringPtr password=0);
   boolean postData(const char *request_type, const char *URL, const char *body = "", const char *token = "", uint32_t bodylen = 0);
+  boolean postData(const char *request_type, const char *URL, JsonObject& body, const char *token);
   boolean postData(const char *server, uint16_t port, const char *connType, const char *URL, const char *body = "");
   int8_t getNetworkType(char *typeStringBuffer, size_t bufferLength);
   int8_t getBearerStatus(void);
@@ -274,6 +276,7 @@ class Adafruit_FONA : public FONAStreamType {
   // Helper functions to verify responses.
   boolean expectReply(FONAFlashStringPtr reply, uint16_t timeout = 10000);
   boolean sendCheckReply(const char *send, const char *reply, uint16_t timeout = FONA_DEFAULT_TIMEOUT_MS);
+  boolean sendCheckReply(JsonObject& send, FONAFlashStringPtr reply, uint16_t timeout);
   boolean sendCheckReply(FONAFlashStringPtr send, FONAFlashStringPtr reply, uint16_t timeout = FONA_DEFAULT_TIMEOUT_MS);
   boolean sendCheckReply(const char* send, FONAFlashStringPtr reply, uint16_t timeout = FONA_DEFAULT_TIMEOUT_MS);
 
@@ -297,6 +300,7 @@ class Adafruit_FONA : public FONAStreamType {
   uint16_t readRaw(uint16_t b);
   uint8_t readline(uint16_t timeout = FONA_DEFAULT_TIMEOUT_MS, boolean multiline = false);
   uint8_t getReply(const char *send, uint16_t timeout = FONA_DEFAULT_TIMEOUT_MS);
+  uint8_t getReply(JsonObject& send, uint16_t timeout);
   uint8_t getReply(FONAFlashStringPtr send, uint16_t timeout = FONA_DEFAULT_TIMEOUT_MS);
   uint8_t getReply(FONAFlashStringPtr prefix, char *suffix, uint16_t timeout = FONA_DEFAULT_TIMEOUT_MS);
   uint8_t getReply(FONAFlashStringPtr prefix, int32_t suffix, uint16_t timeout = FONA_DEFAULT_TIMEOUT_MS);
