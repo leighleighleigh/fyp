@@ -16,7 +16,6 @@
 
 #ifndef SERVER
 #define SERVER "bosl.com.au/IoT/wsudwatch/FYP_SGI/log.php"
-// #define SERVER "***REMOVED***/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f"
 #endif
 
 const char boardName[] = BOARDNAME;
@@ -42,7 +41,7 @@ Adafruit_FONA_LTE fona = Adafruit_FONA_LTE();
 char imei[16] = {0}; // Use this for device ID
 uint8_t type;
 uint16_t vBatt;
-char bootDateTime[] = "YYYY-MM-DD hh:mm:ss";
+// char bootDateTime[] = "YYYY-MM-DD hh:mm:ss";
 
 // char PIN[5] = "1234"; // SIM card PIN
 // char dateTimeFormat[] = "YYYY-MM-DD hh:mm:ss";
@@ -187,23 +186,23 @@ boolean setupFONA()
     // READ TIME
     if (!hasBooted)
     {
-        char timeBuff[48];
-        fona.getTime(timeBuff, 48);
-        // Replace quotes with spaces
-        replacechar(timeBuff, '\"', ' ');
-        Serial.print("Network time: ");
-        Serial.println(timeBuff);
+        // char timeBuff[48];
+        // fona.getTime(timeBuff, 48);
+        // // Replace quotes with spaces
+        // replacechar(timeBuff, '\"', ' ');
+        // Serial.print("Network time: ");
+        // Serial.println(timeBuff);
 
-        // Clean the network time into DateTime format
-        String bt = String(timeBuff);
-        bt.replace('/', '-');
-        bt.replace(',', ' ');
-        unsigned int tsIndex = bt.indexOf('+');
-        String btc = bt.substring(0, tsIndex);
-        btc.trim();
-        Serial.print("Cleaned boot time: ");
-        Serial.println(btc);
-        sprintf(bootDateTime, "20%s", btc.c_str());
+        // // Clean the network time into DateTime format
+        // String bt = String(timeBuff);
+        // bt.replace('/', '-');
+        // bt.replace(',', ' ');
+        // unsigned int tsIndex = bt.indexOf('+');
+        // String btc = bt.substring(0, tsIndex);
+        // btc.trim();
+        // Serial.print("Cleaned boot time: ");
+        // Serial.println(btc);
+        // sprintf(bootDateTime, "20%s", btc.c_str());
         hasBooted = true;
     }
 
