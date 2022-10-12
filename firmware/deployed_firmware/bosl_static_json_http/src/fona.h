@@ -1,19 +1,27 @@
 #include <Arduino.h>
-
 #define SIMCOM_7000
-
 // #include "ArduinoJson.h"
 // #include <RTClib.h>
 #include "Adafruit_FONA.h"
 #include <SoftwareSerial.h>
 
 #ifndef BOARDNAME
-    #define BOARDNAME "Unknown"
+#define BOARDNAME "UNKOWN"
+#endif
+
+#ifndef TOKEN
+#define TOKEN ""
+// #define TOKEN "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN"
+#endif
+
+#ifndef SERVER
+#define SERVER "bosl.com.au/IoT/wsudwatch/FYP_SGI/log.php"
+// #define SERVER "cms.leigh.sh/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f"
 #endif
 
 const char boardName[] = BOARDNAME;
-const char token[] = "nNgr-OJA-K2cNLkfZWQ0B-Xzlrkb9coN";
-const char URL[] = "cms.leigh.sh/flows/trigger/625c3333-48bf-4397-a5a6-a0d72e204b6f";
+const char token[] = TOKEN;
+const char URL[] = SERVER;
 
 // What baud do we try immediately after boot, or set the module to after trying default.
 #define FONA_BAUD 9600
@@ -39,14 +47,6 @@ char dateTimeFormat[] = "YYYY-MM-DD hh:mm:ss";
 char timeBuff[48];
 String bootDateTime;
 
-// GLOBAL SENSOR READINGS
-int rawTemp, rawSoil;
-int lower_rawA, lower_rawB;
-int upper_rawA, upper_rawB;
-float upper_temp, lower_temp;
-float lower_rawAverage, lower_sensorResistance;
-float upper_rawAverage, upper_sensorResistance;
-
 bool netStatus();
 boolean moduleSetup();
 
@@ -67,7 +67,7 @@ bool hasBooted = false;
 
 boolean setupFONA()
 {
-    Serial.println("powerUp");
+    // Serial.println("powerUp");
     fona.powerOn(FONA_PWRKEY);
     delay(6000);
 
@@ -79,33 +79,32 @@ boolean setupFONA()
 
     // Get the battery input! (This is the SIM7000G ADC)
     fona.getBattVoltage(&vBatt);
-    Serial.print("vBatt: ");
-    Serial.print(vBatt);
-    Serial.println("mV");
+    // Serial.print("vBatt: ");
+    // Serial.print(vBatt);
+    // Serial.println("mV");
 
-    #if !USE_FONA
-        return true;
-    #endif
-
-    Serial.println("setFunc 0");
+    // Serial.println("setFunc 0");
     fona.setFunctionality(0);
     delay(3000);
     // Reset if needed
-    Serial.println("setFunc 1");
+    // Serial.println("setFunc 1");
     fona.setFunctionality(1);
     delay(3000);
 
-    Serial.println("setFunc 6...");
-    fona.setFunctionality(6);
-    delay(30000);
+    if (!hasBooted)
+    {
+        Serial.println("setFunc 6...");
+        fona.setFunctionality(6);
+        delay(30000);
 
-    fona.sendCheckReply(F("ATE0"),F("OK"),500);
-    fona.sendCheckReply(F("ATE0"),F("OK"),500);
-    fona.sendCheckReply(F("ATE0"),F("OK"),500);
-    fona.sendCheckReply(F("ATE0"),F("OK"),500);
+        fona.sendCheckReply(F("ATE0"), F("OK"), 500);
+        fona.sendCheckReply(F("ATE0"), F("OK"), 500);
+        fona.sendCheckReply(F("ATE0"), F("OK"), 500);
+        fona.sendCheckReply(F("ATE0"), F("OK"), 500);
 
-    fona.setFunctionality(1);
-    delay(3000);
+        fona.setFunctionality(1);
+        delay(3000);
+    }
 
     // // Turn off echo
     // fona.sendCheckReply(F("ATE0"),F("OK"),1000);
@@ -115,7 +114,7 @@ boolean setupFONA()
 
     // All features
     // fona.setNetworkSettings(F("mdata.net.au"));
-    Serial.println("set network");
+    // Serial.println("set network");
     fona.setNetworkSettings(F("mdata.net.au"));
 
     // Improve SNR time
@@ -158,10 +157,10 @@ boolean setupFONA()
     // turn GPRS on
     while (!fona.enableGPRS(true))
     {
-        if(millis() > 30000 && !hasBooted)
+        if (millis() > 30000 && !hasBooted)
         {
             // We tried to do this for 30 seconds, on our first boot - lets just skip this step and continue.
-            Serial.println("Failed GPRS setting for 30 seconds on first boot, skipping...");
+            Serial.println(F("Failed GPRS setting for 30 seconds on first boot, skipping..."));
             delay(1000);
             break;
         }
@@ -206,31 +205,6 @@ boolean setupFONA()
         hasBooted = true;
     }
 
-    return true;
-}
-
-void sendPOST()
-{
-    // Create char buffers for the floating point numbers for sprintf
-    // Make sure these buffers are long enough for your request URL
-    char body[180];
-    uint32_t bodylen = 0;
-    // POST request, csv-in-JSON
-    bodylen = sprintf(body, "{\"data\":\"%s,%s,%u,20%s,%d,%d,%s,%d,%d,%d,%s,%d,%s,%s,%s,0.0,0.0,%s\"}\0", boardName, imei, vBatt, bootDateTime.c_str(), upper_rawA, upper_rawB, String(upper_rawAverage).c_str(), (uint16_t)upper_sensorResistance, lower_rawA, lower_rawB, String(lower_rawAverage).c_str(), (uint16_t)lower_sensorResistance, String(lower_temp).c_str(), String(upper_temp).c_str(),String(rawTemp).c_str(), String(rawSoil).c_str());
-
-
-    int counter = 0;
-
-    while (counter < 3 && !fona.postData("POST", URL, body, token, bodylen))
-    {
-        Serial.println(F("Failed to complete HTTP POST..."));
-        counter++;
-        delay(1000);
-    }
-}
-
-void loopFONA()
-{
     // Open wireless connection if not already activated
     if (!fona.wirelessConnStatus())
     {
@@ -246,17 +220,8 @@ void loopFONA()
         Serial.println(F("Data already enabled!"));
     }
 
-    sendPOST();
+    return true;
 }
-
-// void simOff()
-// {
-//     // powers off SIM7000
-//     digitalWrite(FONA_PWRKEY, LOW);
-//     delay(1200); // For SIM7000
-//     digitalWrite(FONA_PWRKEY, HIGH);
-//     delay(2000);
-// }
 
 void shutdownFONA()
 {

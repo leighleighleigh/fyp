@@ -16,19 +16,6 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire,ONE_WIRE_BUS_PU);
 /********************************************************************/ 
 
-// uint8_t tempChannelA, tempChannelB;
-
-// void getAddresses(uint8_t * channelA, uint8_t * channelB)
-// {
-//     uint8_t chA,chB;
-//     sensors.getAddress(&chA,0);
-//     delay(25);
-//     sensors.getAddress(&chB,1);
-//     delay(25);
-//     *channelA = chA;
-//     *channelB = chB;
-// }
-
 void initTemperatures()
 {
   // Start up the library 
@@ -38,13 +25,6 @@ void initTemperatures()
   uint8_t sensorCount = sensors.getDeviceCount();
   Serial.print("Sensors found: ");
   Serial.println(sensorCount);
-
-//   // Get sensor addresses, so that calls to read them are fast!
-//   getAddresses(&tempChannelA,&tempChannelB);
-//   Serial.print("Address A: ");
-//   Serial.println(tempChannelA);
-//   Serial.print("Address B: ");
-//   Serial.println(tempChannelB);
 }
 
 void readTemperatures(float * tempA, float * tempB)
