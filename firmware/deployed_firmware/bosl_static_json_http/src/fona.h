@@ -28,7 +28,7 @@ const char URL[] = SERVER;
 // What baud to we assume is default
 #define FONA_DEFAULT_BAUD 115200
 // Reset fully on each reboot
-#define FONA_RESET_ON_FIRST_BOOT 0
+#define FONA_RESET_ON_FIRST_BOOT 1
 
 #define FONA_PWRKEY 4
 #define FONA_DTR 5 // Connect with solder jumper

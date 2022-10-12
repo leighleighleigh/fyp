@@ -8,6 +8,11 @@
 #include <utils.h>
 #include "fona.h"
 
+// Sleep time
+#ifndef SLEEP_TIME
+  #define SLEEP_TIME 600
+#endif
+
 // SMT100 analog inputs
 #define SMT_TMP A0
 #define SMT_SOIL A1
