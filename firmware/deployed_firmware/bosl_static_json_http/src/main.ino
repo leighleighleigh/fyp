@@ -13,6 +13,10 @@
   #define SLEEP_TIME 600
 #endif
 
+#ifndef CELLNUMBER
+  #define CELLNUMBER "0455??????"
+#endif
+
 // SMT100 analog inputs
 #define SMT_TMP A0
 #define SMT_SOIL A1
@@ -80,15 +84,16 @@ void sendPOST()
     JsonObject obj = doc.to<JsonObject>();
 
     obj[F("device_name")] = boardName;
-    obj[F("imei")] = imei;
+    // obj[F("imei")] = imei;
+    obj[F("cellnumber")] = CELLNUMBER;
     obj[F("batt_mv")] = vBatt;
     obj[F("uptime_s")] = millis()/1000;
     obj[F("chmln_top_ohms")] = upper_sensorResistance;
     obj[F("chmln_bot_ohms")] = lower_sensorResistance;
     obj[F("ds18b20_top_temp_c")] = upper_temp;
     obj[F("ds18b20_bot_temp_c")] = lower_temp;
-    obj[F("smt_vwc")] = rawSoil;
-    obj[F("smt_temp_c")] = rawTemp;
+    obj[F("smt_vwc_raw")] = rawSoil;
+    obj[F("smt_temp_raw")] = rawTemp;
 
     int counter = 0;
     while (counter < 3 && !fona.postData("POST", URL, obj, token))
@@ -131,8 +136,8 @@ void loop()
   shutdownFONA();
 
   // Sleep for 60 seconds in low-power mode
-  delay(1000);
+  // delay(1000);
   Serial.println("Sleeping...");
-  Sleepy(60);
+  Sleepy(SLEEP_TIME);
   Serial.println("...waking up!!!");
 }
