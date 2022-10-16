@@ -119,7 +119,7 @@ for idx, gpx in enumerate(deviceprefix):
         g['chmln_bot_cb'] = apply_ohm_to_cb(g, chameleonKey='chmln_bot_ohms', tempKey='ds18b20_bot_temp_c')
         g['smt_vwc_pct'] = convert_smt_vwc(g)
         g['smt_temp_c'] = convert_smt_temp(g)
-        g = g[g['uptime_s'] > 50000]
+        # g = g[g['uptime_s'] > 50000]
         # ax = g.plot(y=['chmln_top_cb', 'chmln_bot_cb','ds18b20_top_temp_c', 'ds18b20_bot_temp_c','smt_vwc_pct','smt_temp_c'])
         ax = g.plot(y=['chmln_top_cb', 'chmln_bot_cb'])
         ax.set_title('Device: {}'.format(c))
