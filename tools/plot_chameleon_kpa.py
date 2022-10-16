@@ -36,7 +36,7 @@ def ohm_to_cb(rS):
     if rS < 35000:
         return abs(-2.246-5.239*(rS/1000.00)*(1+.018*(tempC-24.00))-.06756*(rS/1000.00)*(rS/1000.00)*((1.00+0.018*(tempC-24.00))*(1.00+0.018*(tempC-24.00))))
 
-# Open-circuited!
+    # Open-circuited!
     return 255
 
 # Grab filename
