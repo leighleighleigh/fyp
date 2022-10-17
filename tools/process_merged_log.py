@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 
-import pytz
+from mcap.mcap0.well_known import SchemaEncoding, MessageEncoding
+from mcap.mcap0.writer import Writer
+from pathlib import Path
+from time import time_ns
+import argparse
+import base64
+import csv
+import datetime
 import json
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib as mpl
 import matplotlib
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import pandas as pd
+import pytz
+import struct
+import typing
 matplotlib.use('WebAgg')
 
 plt.style.use('seaborn-pastel')
@@ -85,12 +95,14 @@ def apply_ohm_to_cb(df, chameleonKey='chmln_top_ohms', tempKey='ds18b20_top_temp
     """
     return df.apply(lambda row: ohm_to_cb(row[chameleonKey], row[tempKey]), axis=1)
 
+
 def convert_smt_vwc(df):
     """
     Converts raw SMT analog readings into a percentage Volumetric Water Content.
     Assumes 3.3V ADC max and 10-bit resolution.
     """
     return df.apply(lambda row: (row['smt_vwc_raw'] / 1023.0) * 3.3 * 100, axis=1)
+
 
 def convert_smt_temp(df):
     """
@@ -99,46 +111,70 @@ def convert_smt_temp(df):
     """
     return df.apply(lambda row: (((row['smt_temp_raw'] / 1023.0) * 3.3 * 10)-4.0)*10, axis=1)
 
+
 # Group these names based on prefix, which is the first letter
 deviceprefix = ['C', 'P', 'S']
-# fig, axs = plt.subplots(3, 1, sharex=True)
 
-for idx, gpx in enumerate(deviceprefix):
-    groupdf = df[df['device_name'].str[0] == gpx]
-    # groupdf = groupdf.pivot_table(index=['device_name','date_created_utc'],values=['smt_vwc_raw'])
-    # groupdf = groupdf.pivot_table(index=['device_name', 'date_created_utc'], values=['chmln_top_ohms', 'chmln_bot_ohms'])
-    # groupdf = groupdf.pivot_table(index=['device_name','date_created_utc'],values=['chmln_bot_ohms'])
-    # groupdfs = groupdf.unstack(level=0)
+# Open mcap file
+with open("merged.mcap","wb") as f_mcap:
+    # Build an MCAP writer for this device
+    writer = Writer(f_mcap)
+    writer.start("x-jsonschema", library="bosl-json")
 
-    # ax = axs[idx]
+    # Read schema 
+    with open(Path(__file__).parent / "ColumnDataRaw.json", "rb") as f:
+        schema = f.read()
 
-    for cidx, c in enumerate(groupdf['device_name'].unique()):
-        g = groupdf[groupdf['device_name'] == c]
-        # Convert ohms to cb, which is the equivalent of the watermark reading
-        g['chmln_top_cb'] = apply_ohm_to_cb(g, chameleonKey='chmln_top_ohms', tempKey='ds18b20_top_temp_c')
-        g['chmln_bot_cb'] = apply_ohm_to_cb(g, chameleonKey='chmln_bot_ohms', tempKey='ds18b20_bot_temp_c')
-        g['smt_vwc_pct'] = convert_smt_vwc(g)
-        g['smt_temp_c'] = convert_smt_temp(g)
-        # g = g[g['uptime_s'] > 50000]
-        # ax = g.plot(y=['chmln_top_cb', 'chmln_bot_cb','ds18b20_top_temp_c', 'ds18b20_bot_temp_c','smt_vwc_pct','smt_temp_c'])
-        ax = g.plot(y=['chmln_top_cb', 'chmln_bot_cb'])
-        ax.set_title('Device: {}'.format(c))
-        #ax.plot(rawbat.index, rawbat, label=c[0], color=colors[cidx])
-        # # Fill in gaps linearly, showing the raw data as a thin dotted line
-        # linbat = pd.Series(rawbat).interpolate(
-        #     method='time', limit_direction='forward', limit_area='inside')
-        # # Derive the rolling median from the battery data, plotting it as a thicker line with the same colour
-        # avgbat = pd.Series(rawbat).rolling('1h').mean()
-        # # _linecolor = colors[cidx % len(colors)]
-        # linbat.plot(,sharex=True,lw=1,ls='--')
-        # # avgbat.plot(ax=ax, sharex=True, style=[_linecolor], lw=1, ls='-')
-        # ax.autoscale(True, axis='y', tight=True)
-        # ax.legend()
-        # ax.set_ylim(0, 6000)
+    # Build writers for this schema
+    schema_id = writer.register_schema(
+        name="bosl.ColumnDataRaw",
+        encoding=SchemaEncoding.JSONSchema,
+        data=schema,
+    )
 
-    # plt.title(gpx)
-    # plt.xlabel('Time')
-    # plt.legend()
+    for idx, gpx in enumerate(deviceprefix):
+        device_group = df[df['device_name'].str[0] == gpx]
+        # Iterate over individual devices
+        for cidx, c in enumerate(device_group['device_name'].unique()):
+            # g contains the data for a single column within this column group
+            device = device_group[device_group['device_name'] == c]
 
-plt.tight_layout()
-plt.show()
+            # Extract all the device ID's in the source file
+            channel_id = writer.register_channel(
+                topic=f"{c}/raw",
+                message_encoding=MessageEncoding.JSON,
+                schema_id=schema_id,
+            )
+
+            # Write out the data to mcap file
+            for i, row in device.iterrows():
+                t = int(row.name.to_pydatetime().timestamp()*1e9)
+                writer.add_message(
+                    channel_id,
+                    log_time=t,
+                    data=row.to_json().encode('utf-8'),
+                    publish_time=t
+                )
+
+            # Apply filters to the device data
+            device['chmln_top_cb'] = apply_ohm_to_cb(
+                device, chameleonKey='chmln_top_ohms', tempKey='ds18b20_top_temp_c')
+            device['chmln_bot_cb'] = apply_ohm_to_cb(
+                device, chameleonKey='chmln_bot_ohms', tempKey='ds18b20_bot_temp_c')
+            device['smt_vwc_pct'] = convert_smt_vwc(device)
+            device['smt_temp_c'] = convert_smt_temp(device)
+            device['chmln_top_cb_rolling'] = pd.Series(
+                device['chmln_top_cb']).rolling('10min').median()
+            device['chmln_bot_cb_rolling'] = pd.Series(
+                device['chmln_bot_cb']).rolling('10min').median()
+
+            # # Plot the data
+            # ax = device.plot(y=['chmln_top_cb', 'chmln_bot_cb', 'chmln_top_cb_rolling', 'chmln_bot_cb_rolling',
+            #             'ds18b20_top_temp_c', 'ds18b20_bot_temp_c', 'smt_vwc_pct', 'smt_temp_c'])
+
+            # ax.set_title('Device: {}'.format(c))
+
+    writer.finish()
+
+# plt.tight_layout()
+# plt.show()
