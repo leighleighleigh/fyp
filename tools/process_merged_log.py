@@ -34,8 +34,9 @@ with open('merged.json', 'r') as f_in:
         except:
             continue    # ignore the error
 
-with open('merged_array.json', 'w') as f_out:
-    f_out.write(json.dumps(data))
+# Export so it can be used for directus uploads
+#with open('merged_array.json', 'w') as f_out:
+    #f_out.write(json.dumps(data))
 
 # Creates a Pandas Dataframe object from the json data
 df = pd.DataFrame(data)
@@ -52,18 +53,18 @@ def unpack(x):
 
 
 df = df.apply(unpack)
-print(df)
+#print(df)
 
 # Replace index with the converted date_created_utc column
 df['date_created_utc'] = pd.to_datetime(df['date_created_utc'])
 df = df.set_index('date_created_utc')
-print(df)
+#print(df)
 # Convert index to australian timezone (from UTC)
 eastern = pytz.timezone('Australia/Melbourne')
 df.index = df.index.tz_localize(pytz.utc)
-print(df)
+#print(df)
 df.index = df.index.tz_convert(eastern)
-print(df)
+#print(df)
 
 # Using the value from the website for watermark reading
 # Uses OHMS not kOhms
@@ -88,12 +89,16 @@ def ohm_to_cb(rS, tempC):
     return 255
 
 
-def apply_ohm_to_cb(df, chameleonKey='chmln_top_ohms', tempKey='ds18b20_top_temp_c'):
+def apply_ohm_to_cb(df, chameleonKey='chmln_top_ohms', tempKey=None):
     """
     Operates on two input series, df_chameleon and df_temp, and derives a new value via ohm_to_cb.
     Operates over the entire series at once.
     """
-    return df.apply(lambda row: ohm_to_cb(row[chameleonKey], row[tempKey]), axis=1)
+    # If tempKey is not provided, assumes tempC=24
+    if tempKey is None:
+        return df.apply(lambda row: ohm_to_cb(row[chameleonKey], 24), axis=1)
+    else:
+        return df.apply(lambda row: ohm_to_cb(row[chameleonKey], row[tempKey]), axis=1)
 
 
 def convert_smt_vwc(df):
@@ -126,8 +131,17 @@ with open("merged.mcap","wb") as f_mcap:
         schema = f.read()
 
     # Build writers for this schema
-    schema_id = writer.register_schema(
+    schema_raw = writer.register_schema(
         name="bosl.ColumnDataRaw",
+        encoding=SchemaEncoding.JSONSchema,
+        data=schema,
+    )
+
+    with open(Path(__file__).parent / "ColumnData.json", "rb") as f:
+        schema = f.read()
+
+    schema_id = writer.register_schema(
+        name="bosl.ColumnData",
         encoding=SchemaEncoding.JSONSchema,
         data=schema,
     )
@@ -140,15 +154,71 @@ with open("merged.mcap","wb") as f_mcap:
             device = device_group[device_group['device_name'] == c]
 
             # Extract all the device ID's in the source file
-            channel_id = writer.register_channel(
+            channel_raw_id = writer.register_channel(
                 topic=f"{c}/raw",
+                message_encoding=MessageEncoding.JSON,
+                schema_id=schema_raw,
+            )
+
+            channel_id = writer.register_channel(
+                topic=f"{c}/clean",
                 message_encoding=MessageEncoding.JSON,
                 schema_id=schema_id,
             )
 
+            # Apply filters to the device data
+            device['chmln_top_cb'] = apply_ohm_to_cb(device, chameleonKey='chmln_top_ohms', tempKey='ds18b20_top_temp_c')
+            device['chmln_bot_cb'] = apply_ohm_to_cb(device, chameleonKey='chmln_bot_ohms', tempKey='ds18b20_bot_temp_c')
+            device['chmln_top_cb_uncalibrated'] = apply_ohm_to_cb(device, chameleonKey='chmln_top_ohms')
+            device['chmln_bot_cb_uncalibrated'] = apply_ohm_to_cb(device, chameleonKey='chmln_bot_ohms')
+            
+            # Convert to percentages
+            device['smt_vwc_pct'] = convert_smt_vwc(device)
+            device['smt_temp_c'] = convert_smt_temp(device)
+
+            # Remove zero-values
+            def rmzero(key):
+                device[key] = device[key][device[key]>0]
+
+            # Smooth the data into 10 minute rolling averages
+            def smooth(key):
+                device[key] = pd.Series(device[key]).rolling('1h').median()
+            
+            rmzero('smt_vwc_pct')
+            rmzero('chmln_top_cb')
+            rmzero('chmln_bot_cb')
+            rmzero('ds18b20_top_temp_c')
+            rmzero('ds18b20_bot_temp_c')
+
+            smooth('smt_vwc_pct')
+            smooth('smt_temp_c')
+            smooth('chmln_top_cb')
+            smooth('chmln_bot_cb')
+            smooth('ds18b20_top_temp_c')
+            smooth('ds18b20_bot_temp_c')
+
+            # Create subtraction entry
+            device['chmln_delta_cb'] = device['chmln_bot_cb'] - device['chmln_top_cb']
+
+            # # Plot the data
+            # ax = device.plot(y=['chmln_top_cb', 'chmln_bot_cb', 'chmln_top_cb_rolling', 'chmln_bot_cb_rolling',
+            #             'ds18b20_top_temp_c', 'ds18b20_bot_temp_c', 'smt_vwc_pct', 'smt_temp_c'])
+
+            # ax.set_title('Device: {}'.format(c))
+
+
             # Write out the data to mcap file
             for i, row in device.iterrows():
                 t = int(row.name.to_pydatetime().timestamp()*1e9)
+
+                # Raw data message
+                writer.add_message(
+                    channel_raw_id,
+                    log_time=t,
+                    data=row.to_json().encode('utf-8'),
+                    publish_time=t
+                )
+                # Cleaned data message
                 writer.add_message(
                     channel_id,
                     log_time=t,
@@ -156,23 +226,6 @@ with open("merged.mcap","wb") as f_mcap:
                     publish_time=t
                 )
 
-            # Apply filters to the device data
-            device['chmln_top_cb'] = apply_ohm_to_cb(
-                device, chameleonKey='chmln_top_ohms', tempKey='ds18b20_top_temp_c')
-            device['chmln_bot_cb'] = apply_ohm_to_cb(
-                device, chameleonKey='chmln_bot_ohms', tempKey='ds18b20_bot_temp_c')
-            device['smt_vwc_pct'] = convert_smt_vwc(device)
-            device['smt_temp_c'] = convert_smt_temp(device)
-            device['chmln_top_cb_rolling'] = pd.Series(
-                device['chmln_top_cb']).rolling('10min').median()
-            device['chmln_bot_cb_rolling'] = pd.Series(
-                device['chmln_bot_cb']).rolling('10min').median()
-
-            # # Plot the data
-            # ax = device.plot(y=['chmln_top_cb', 'chmln_bot_cb', 'chmln_top_cb_rolling', 'chmln_bot_cb_rolling',
-            #             'ds18b20_top_temp_c', 'ds18b20_bot_temp_c', 'smt_vwc_pct', 'smt_temp_c'])
-
-            # ax.set_title('Device: {}'.format(c))
 
     writer.finish()
 
