@@ -1,6 +1,37 @@
 #include <Arduino.h>
 // #include <ArduinoJson.h>
 
+void readChameleonRaw(int pinA, int pinB, int *rawA, int *rawB)
+{
+    // ASSUMES a 10 BIT ADC RESOLUTION
+
+    // Place into forward current mode
+    pinMode(pinB, INPUT);
+    pinMode(pinA, OUTPUT);
+    digitalWrite(pinA, HIGH);
+    // Measure vY, takes 125us
+    *rawB = analogRead(pinB);
+    // Place into no current mode
+    digitalWrite(pinA, LOW);
+    delayMicroseconds(250);
+
+    // Place into reverse current mode
+    pinMode(pinA, INPUT);
+    pinMode(pinB, OUTPUT);
+    digitalWrite(pinB, HIGH);
+    // Measure vX, takes 125us
+    *rawA = analogRead(pinA);
+    // Return to no current mode
+    digitalWrite(pinB, LOW);
+
+    // Average the two readings
+    // *rawAvg = (*rawB + *rawA) / 2;
+    // Calculate the result in KOhms
+    // *sensorResistance = float(10) * (1023 - *rawAvg) / *rawAvg;
+    // Multiply by 1000 for Ohms
+    // *sensorResistance *= 1000;
+}
+
 void readChameleon(int pinA, int pinB, int *rawA, int *rawB, float *rawAvg, float *sensorResistance)
 {
     // ASSUMES a 10 BIT ADC RESOLUTION
