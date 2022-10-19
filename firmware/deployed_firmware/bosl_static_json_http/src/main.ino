@@ -78,7 +78,7 @@ void Sleepy(uint16_t tsleep)
 
 void sendPOST()
 {
-    StaticJsonDocument<300> doc;
+    StaticJsonDocument<200> doc;
     // deserializeJson(doc, jsonSchema);
     // Convert the document to an object
     JsonObject obj = doc.to<JsonObject>();
@@ -147,5 +147,5 @@ void loop()
   // delay(1000);
   Serial.println("Sleeping...");
   Sleepy(SLEEP_TIME);
-  Serial.println("...waking up!!!");
+  // Serial.println("...waking up!!!");
 }
