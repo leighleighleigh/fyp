@@ -4,6 +4,14 @@
   "description": "A single data-point reported from a BoSL board, containing the RAW measurements from all attached sensors.",
   "type": "object",
   "properties": {
+    "chmln_top_ohms_smooth":{
+        "type":"number",
+        "description":""
+    },
+    "chmln_bot_ohms_smooth":{
+        "type":"number",
+        "description":""
+    },
     "chmln_top_cb_uncalibrated":{
         "type":"number",
         "description":"Assumes tempC = 24"
@@ -14,15 +22,19 @@
     },
     "chmln_top_cb":{
         "type":"number",
-        "description":"kPa"
+        "description":"centibar"
     },
     "chmln_bot_cb":{
         "type":"number",
-        "description":"kPa"
+        "description":"centibar"
     },
-    "chmln_delta_cb":{
+    "chmln_top_cb_rate":{
         "type":"number",
-        "description":"(bot-top)kPa"
+        "description":"centibar/second"
+    },
+    "chmln_bot_cb_rate":{
+        "type":"number",
+        "description":"centibar/second"
     },
     "ds18b20_top_temp_c":{
         "type":"number",

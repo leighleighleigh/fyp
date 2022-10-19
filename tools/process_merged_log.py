@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from mcap.mcap0.well_known import SchemaEncoding, MessageEncoding
-from mcap.mcap0.writer import Writer
+from mcap.well_known import SchemaEncoding, MessageEncoding
+from mcap.writer import Writer
 from pathlib import Path
 from time import time_ns
 import argparse
@@ -16,6 +16,7 @@ import pandas as pd
 import pytz
 import struct
 import typing
+from numpy import polyfit
 matplotlib.use('WebAgg')
 
 plt.style.use('seaborn-pastel')
@@ -178,15 +179,24 @@ with open("merged.mcap","wb") as f_mcap:
 
             # Remove zero-values
             def rmzero(key):
-                device[key] = device[key][device[key]>0]
+                device[key] = device[key][device[key]>0].copy()
 
             # Smooth the data into 10 minute rolling averages
+            smoothperiod = '30min'
+
             def smooth(key):
-                device[key] = pd.Series(device[key]).rolling('1h').median()
-            
+                device[key] = pd.Series(device[key]).rolling(smoothperiod).mean().copy()
+
+            def smoothinline(key):
+                return pd.Series(device[key]).rolling(smoothperiod).mean().copy()
+
             rmzero('smt_vwc_pct')
+            rmzero('chmln_top_ohms')
+            rmzero('chmln_top_ohms')
             rmzero('chmln_top_cb')
-            rmzero('chmln_bot_cb')
+            rmzero('chmln_top_cb')
+            rmzero('chmln_bot_cb_uncalibrated')
+            rmzero('chmln_bot_cb_uncalibrated')
             rmzero('ds18b20_top_temp_c')
             rmzero('ds18b20_bot_temp_c')
 
@@ -194,11 +204,24 @@ with open("merged.mcap","wb") as f_mcap:
             smooth('smt_temp_c')
             smooth('chmln_top_cb')
             smooth('chmln_bot_cb')
+            smooth('chmln_bot_cb_uncalibrated')
+            smooth('chmln_bot_cb_uncalibrated')
             smooth('ds18b20_top_temp_c')
             smooth('ds18b20_bot_temp_c')
 
+            device['chmln_top_ohms_smooth'] = smoothinline('chmln_top_ohms')
+            device['chmln_bot_ohms_smooth'] = smoothinline('chmln_bot_ohms')
+
             # Create subtraction entry
-            device['chmln_delta_cb'] = device['chmln_bot_cb'] - device['chmln_top_cb']
+            # device['chmln_top_cb_rate'] = device['chmln_top_cb'].diff()
+            # device['chmln_bot_cb_rate'] = device['chmln_bot_cb'].diff()
+
+            # Do funky polyfit window thingy
+            def rollinglintrend(key):
+                return pd.Series(device[key].copy()).rolling(30).apply(lambda x: polyfit(range(len(x)), x, 1)[0])
+
+            device['chmln_top_cb_rate'] = rollinglintrend("chmln_top_cb")
+            device['chmln_bot_cb_rate'] = rollinglintrend("chmln_bot_cb")
 
             # # Plot the data
             # ax = device.plot(y=['chmln_top_cb', 'chmln_bot_cb', 'chmln_top_cb_rolling', 'chmln_bot_cb_rolling',
