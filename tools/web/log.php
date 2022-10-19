@@ -31,18 +31,15 @@ function parseJSONPayload()
     $data = json_decode($json,true);
 
     // SCHEMA VALIDATION
-    if ( ! isset($data['device_name']) )
+    if ( ! isset($data['id']) )
     {
-        if ( ! isset($data['id']) )
-        {
-            http_response_code(400);
-            exit("device_name key is required");
-        }
+        http_response_code(400);
+        exit("id key is required");
     }
 
     // ADD DATE-CREATED FIELD
     // This is more robust than relying on the modem-reported value
-    date_default_timezone_set("Australi/Melbourne");
+    date_default_timezone_set("Australia/Melbourne");
     $time_in_Detroit = date('Y-m-d H:i:s', time());
     $utc_time = gmdate("Y-m-d  H:i:s");
     $data["date_created_utc"] = $utc_time;
@@ -57,14 +54,8 @@ Resolves the filepath for the request, given a device_name key
 function getFilePath($data, $filetype = 'json'){
     $baseurl = "./";
 
-    // Extract filename from JSON request, in the 'device_name' key
-    if ( ! isset($data['device_name']) )
-    {
-        $boslname = $data['id'];
-    }else{
-        $boslname = $data['device_name'];
-    }
-
+    // Extract filename from JSON request, in the 'id' key
+    $boslname = $data['id'];
     $logfilepath = $baseurl . $boslname . "." . $filetype;
     return $logfilepath;
 }
