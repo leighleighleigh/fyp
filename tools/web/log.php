@@ -33,8 +33,11 @@ function parseJSONPayload()
     // SCHEMA VALIDATION
     if ( ! isset($data['device_name']) )
     {
-        http_response_code(400);
-        exit("device_name key is required");
+        if ( ! isset($data['id']) )
+        {
+            http_response_code(400);
+            exit("device_name key is required");
+        }
     }
 
     // ADD DATE-CREATED FIELD
@@ -53,8 +56,15 @@ Resolves the filepath for the request, given a device_name key
 */
 function getFilePath($data, $filetype = 'json'){
     $baseurl = "./";
+
     // Extract filename from JSON request, in the 'device_name' key
-    $boslname = $data['device_name'];
+    if ( ! isset($data['device_name']) )
+    {
+        $boslname = $data['id'];
+    }else{
+        $boslname = $data['device_name'];
+    }
+
     $logfilepath = $baseurl . $boslname . "." . $filetype;
     return $logfilepath;
 }
