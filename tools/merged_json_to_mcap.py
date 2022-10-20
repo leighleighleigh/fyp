@@ -1,46 +1,32 @@
 #!/usr/bin/env python3
 
-from mcap.well_known import SchemaEncoding, MessageEncoding
-from mcap.writer import Writer
-from pathlib import Path
-from time import time_ns
-import argparse
-import base64
-import csv
 import datetime
 import json
+import typing
+from pathlib import Path
+from time import time_ns
+
 import pandas as pd
 import pytz
-import struct
-import typing
+from mcap.well_known import MessageEncoding, SchemaEncoding
+from mcap.writer import Writer
 from numpy import polyfit
 
-# data = []
-
-# # Opens the per-line-JSON file, merged from get_merged_logs.sh script
-# with open('merged.json', 'r') as f_in:
-#     for line in f_in:
-#         try:
-#             data.append(json.loads(line))
-#         except:
-#             continue    # ignore the error
-
 # Creates a Pandas Dataframe object from the json data
-# df = pd.DataFrame(data)
 df = pd.read_json("merged.json", orient="records", lines=True)
 
 
-def unpack(x):
-    rv = []
-    for v in x:
-        if isinstance(v, dict):
-            rv.append([*v.values()][0])
-        else:
-            rv.append(v)
-    return rv
+# def unpack(x):
+#     rv = []
+#     for v in x:
+#         if isinstance(v, dict):
+#             rv.append([*v.values()][0])
+#         else:
+#             rv.append(v)
+#     return rv
 
 
-df = df.apply(unpack)
+# df = df.apply(unpack)
 #print(df)
 
 # Replace index with the converted date_created_utc column
@@ -77,16 +63,16 @@ def ohm_to_cb(rS, tempC):
     return 255
 
 
-def apply_ohm_to_cb(df, chameleonKey='chmln_top_ohms', tempKey=None):
+def apply_kohm_to_cb(df, chameleonKey='chmln_top_ohms', tempKey=None):
     """
     Operates on two input series, df_chameleon and df_temp, and derives a new value via ohm_to_cb.
     Operates over the entire series at once.
     """
     # If tempKey is not provided, assumes tempC=24
     if tempKey is None:
-        return df.apply(lambda row: ohm_to_cb(row[chameleonKey], 24), axis=1)
+        return df.apply(lambda row: ohm_to_cb(row[chameleonKey]*1000, 24), axis=1)
     else:
-        return df.apply(lambda row: ohm_to_cb(row[chameleonKey], row[tempKey]), axis=1)
+        return df.apply(lambda row: ohm_to_cb(row[chameleonKey]*1000, row[tempKey]), axis=1)
 
 
 def convert_smt_vwc(df):
@@ -94,7 +80,7 @@ def convert_smt_vwc(df):
     Converts raw SMT analog readings into a percentage Volumetric Water Content.
     Assumes 3.3V ADC max and 10-bit resolution.
     """
-    return df.apply(lambda row: (row['smt_vwc_raw'] / 1023.0) * 3.3 * 100, axis=1)
+    return df.apply(lambda row: (row['smtVWC'] / 1023.0) * 3.3 * 100, axis=1)
 
 
 def convert_smt_temp(df):
@@ -102,7 +88,7 @@ def convert_smt_temp(df):
     Converts raw SMT analog readings into a percentage Volumetric Water Content.
     Assumes 3.3V ADC max and 10-bit resolution.
     """
-    return df.apply(lambda row: (((row['smt_temp_raw'] / 1023.0) * 3.3 * 10)-4.0)*10, axis=1)
+    return df.apply(lambda row: (((row['smtT'] / 1023.0) * 3.3 * 10)-4.0)*10, axis=1)
 
 
 # Group these names based on prefix, which is the first letter
@@ -128,25 +114,16 @@ with open("merged.mcap","wb") as f_mcap:
     with open(Path(__file__).parent / "ColumnData.json", "rb") as f:
         schema = f.read()
 
-    schema_id = writer.register_schema(
+    schema_calc = writer.register_schema(
         name="bosl.ColumnData",
         encoding=SchemaEncoding.JSONSchema,
         data=schema,
     )
 
-    # with open(Path(__file__).parent / "ColumnDataRawArray.json", "rb") as f:
-    #     schema = f.read()
-
-    # schema_columns = writer.register_schema(
-    #     name="bosl.ColumnDataRawArray",
-    #     encoding=SchemaEncoding.JSONSchema,
-    #     data=schema,
-    # )
-
     column_channel = writer.register_channel(
         topic=f"/raw_columns",
         message_encoding=MessageEncoding.JSON,
-        schema_id=schema_id,
+        schema_id=schema_raw,
     )
 
     for idx, gpx in enumerate(deviceprefix):
@@ -164,28 +141,40 @@ with open("merged.mcap","wb") as f_mcap:
                 schema_id=schema_raw,
             )
 
-            channel_id = writer.register_channel(
-                topic=f"{c}/clean",
+            channel_calc_id = writer.register_channel(
+                topic=f"{c}/calc",
                 message_encoding=MessageEncoding.JSON,
-                schema_id=schema_id,
+                schema_id=schema_calc,
             )
 
-            # Apply filters to the device data
-            swapped_channels = ["S2"]
+            channel_calc_group_id = writer.register_channel(
+                topic=f"/group_{c[0]}",
+                message_encoding=MessageEncoding.JSON,
+                schema_id=schema_calc,
+            )
 
-            if c in swapped_channels:
-                device['chmln_top_cb'] = apply_ohm_to_cb(device, chameleonKey='chmln_bot_ohms', tempKey='ds18b20_top_temp_c')
-                device['chmln_bot_cb'] = apply_ohm_to_cb(device, chameleonKey='chmln_top_ohms', tempKey='ds18b20_bot_temp_c')
-            else:
-                device['chmln_top_cb'] = apply_ohm_to_cb(device, chameleonKey='chmln_top_ohms', tempKey='ds18b20_top_temp_c')
-                device['chmln_bot_cb'] = apply_ohm_to_cb(device, chameleonKey='chmln_bot_ohms', tempKey='ds18b20_bot_temp_c')
+            # Calculate average of Chameleon A/B channels, to derive resistance
+            # Upper chameleon
+            device['uCHAB'] = ((device['uCHA'] + device['uCHB'])/2)
+            # Explicit notation for resistance conversion
+            # device['uCHR'] = 10 * (1023.0 - device['uCHAB']) / device['uCHAB']
+            # Alternate conversion using map function
+            device['uCHR'] = device['uCHAB'].map(lambda x: 10 * (1023.0 - x) / x)
+            # Lower chameleon
+            device['lCHAB'] = ((device['lCHA'] + device['lCHB'])/2)
+            # device['lCHR'] = 10 * (1023.0 - device['lCHAB']) / device['lCHAB']
+            device['lCHR'] = device['lCHAB'].map(lambda x: 10 * (1023.0 - x) / x)
 
-            device['chmln_top_cb_uncalibrated'] = apply_ohm_to_cb(device, chameleonKey='chmln_top_ohms')
-            device['chmln_bot_cb_uncalibrated'] = apply_ohm_to_cb(device, chameleonKey='chmln_bot_ohms')
+            # Ohms to Centibar
+            device['uCB'] = apply_kohm_to_cb(device, chameleonKey='uCHR', tempKey='uT')
+            device['lCB'] = apply_kohm_to_cb(device, chameleonKey='lCHR', tempKey='lT')
+
+            device['uCB_nocal'] = apply_kohm_to_cb(device, chameleonKey='uCHR')
+            device['lCB_nocal'] = apply_kohm_to_cb(device, chameleonKey='lCHR')
             
             # Convert to percentages
-            device['smt_vwc_pct'] = convert_smt_vwc(device)
-            device['smt_temp_c'] = convert_smt_temp(device)
+            device['smtVWC_pct'] = convert_smt_vwc(device)
+            device['smtT_c'] = convert_smt_temp(device)
 
             # Remove zero-values
             def rmzero(key):
@@ -203,29 +192,26 @@ with open("merged.mcap","wb") as f_mcap:
             def smooth(key):
                 device[key] = smoothinline(key)
 
-            rmzero('smt_vwc_pct')
-            rmzero('smt_temp_c')
-            rmzero('chmln_top_ohms')
-            rmzero('chmln_bot_ohms')
-            rmzero('chmln_top_cb')
-            rmzero('chmln_bot_cb')
-            rmzero('chmln_top_cb_uncalibrated')
-            rmzero('chmln_bot_cb_uncalibrated')
-            rmzero('ds18b20_top_temp_c')
-            rmzero('ds18b20_bot_temp_c')
+            # rmzero('smt_vwc_pct')
+            # rmzero('smt_temp_c')
+            # rmzero('chmln_top_ohms')
+            # rmzero('chmln_bot_ohms')
+            # rmzero('chmln_top_cb')
+            # rmzero('chmln_bot_cb')
+            # rmzero('chmln_top_cb_uncalibrated')
+            # rmzero('chmln_bot_cb_uncalibrated')
+            # rmzero('ds18b20_top_temp_c')
+            # rmzero('ds18b20_bot_temp_c')
 
-            smooth('smt_vwc_pct')
-            smooth('smt_temp_c')
+            # smooth('smt_vwc_pct')
+            # smooth('smt_temp_c')
 
-            smooth('chmln_top_cb')
-            smooth('chmln_bot_cb')
-            smooth('chmln_top_cb_uncalibrated')
-            smooth('chmln_bot_cb_uncalibrated')
-            smooth('ds18b20_top_temp_c')
-            smooth('ds18b20_bot_temp_c')
-
-            device['chmln_top_ohms_smooth'] = smoothinline('chmln_top_ohms')
-            device['chmln_bot_ohms_smooth'] = smoothinline('chmln_bot_ohms')
+            # smooth('chmln_top_cb')
+            # smooth('chmln_bot_cb')
+            # smooth('chmln_top_cb_uncalibrated')
+            # smooth('chmln_bot_cb_uncalibrated')
+            # smooth('ds18b20_top_temp_c')
+            # smooth('ds18b20_bot_temp_c')
 
             # Create subtraction entry
             # device['chmln_top_cb_rate'] = device['chmln_top_cb'].diff()
@@ -238,20 +224,22 @@ with open("merged.mcap","wb") as f_mcap:
                 # 5 samples is 10 minutes
                 return pd.Series(device[key].copy()).rolling(5).apply(lambda x: polyfit(range(len(x)), x, 1)[0])
 
-            device['chmln_top_cb_rate'] = rollinglintrend("chmln_top_cb")
-            device['chmln_bot_cb_rate'] = rollinglintrend("chmln_bot_cb")
+            # device['chmln_top_cb_rate'] = rollinglintrend("chmln_top_cb")
+            # device['chmln_bot_cb_rate'] = rollinglintrend("chmln_bot_cb")
 
             # Calculate the rate of change of chmln_top_cb, w.r.t the time index
             # device['chmln_top_cb_rate'] = device['chmln_top_cb'].diff() / device['chmln_top_cb'].index.to_series().diff().dt.total_seconds()
             # device['chmln_bot_cb_rate'] = device['chmln_bot_cb'].diff() / device['chmln_bot_cb'].index.to_series().diff().dt.total_seconds()
 
             # Convert the rate from cb/s to cb/h
-            device['chmln_top_cb_rate'] = device['chmln_top_cb_rate'] * 3600
-            device['chmln_bot_cb_rate'] = device['chmln_bot_cb_rate'] * 3600
+            # device['chmln_top_cb_rate'] = device['chmln_top_cb_rate'] * 3600
+            # device['chmln_bot_cb_rate'] = device['chmln_bot_cb_rate'] * 3600
 
             # Write out the data to mcap file
             for i, row in device.iterrows():
                 t = int(row.name.to_pydatetime().timestamp()*1e9)
+
+                # print(row.to_json().encode('utf-8')
 
                 # Raw data message
                 writer.add_message(
@@ -260,9 +248,16 @@ with open("merged.mcap","wb") as f_mcap:
                     data=row.to_json().encode('utf-8'),
                     publish_time=t
                 )
-                # Cleaned data message
+
                 writer.add_message(
-                    channel_id,
+                    channel_calc_id,
+                    log_time=t,
+                    data=row.to_json().encode('utf-8'),
+                    publish_time=t
+                )
+
+                writer.add_message(
+                    channel_calc_group_id,
                     log_time=t,
                     data=row.to_json().encode('utf-8'),
                     publish_time=t
@@ -277,5 +272,3 @@ with open("merged.mcap","wb") as f_mcap:
 
     writer.finish()
 
-# plt.tight_layout()
-# plt.show()

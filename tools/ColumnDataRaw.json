@@ -4,45 +4,49 @@
   "description": "A single data-point reported from a BoSL board, containing the RAW measurements from all attached sensors.",
   "type": "object",
   "properties": {
-    "device_name": {
+    "id": {
         "type":"string",
         "description":""
     },
-    "cellnumber":{
+    "imei":{
+        "type":"string",
+        "description":""
+    },
+    "bat":{
         "type":"integer",
         "description":""
     },
-    "batt_mv":{
+    "uCHA":{
         "type":"integer",
-        "description":""
+        "description":"Analog reading frmo Upper Chameleon, Channel A"
     },
-    "uptime_s":{
+    "uCHB":{
         "type":"integer",
-        "description":""
+        "description":"Analog reading frmo Upper Chameleon, Channel B"
     },
-    "chmln_top_ohms":{
+    "lCHA":{
+        "type":"integer",
+        "description":"Analog reading frmo Lower Chameleon, Channel A"
+    },
+    "lCHB":{
+        "type":"integer",
+        "description":"Analog reading frmo Lower Chameleon, Channel B"
+    },
+    "uT":{
         "type":"number",
-        "description":""
+        "description":"Upper Temperature Celcius from DS18B20"
     },
-    "chmln_bot_ohms":{
+    "lT":{
         "type":"number",
-        "description":""
+        "description":"Lower Temperature Celcius from DS18B20"
     },
-    "ds18b20_top_temp_c":{
-        "type":"number",
-        "description":""
-    },
-    "ds18b20_bot_temp_c":{
-        "type":"number",
-        "description":""
-    },
-    "smt_vwc_raw":{
+    "smtVWC":{
         "type":"integer",
-        "description":""
+        "description":"Analog Volumetric Water Content reading from SMT100"
     },
-    "smt_temp_raw":{
+    "smtT":{
         "type":"integer",
-        "description":""
+        "description":"Analog temperature reading from SMT100"
     },
     "date_created_utc":{
         "type":"string",
