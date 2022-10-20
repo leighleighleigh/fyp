@@ -1,0 +1,52 @@
+{
+  "$comment": "Column data JSON schema, exactly matches the JSON published by BoSL boards",
+  "title": "bosl.ColumnDataRaw",
+  "description": "A single data-point reported from a BoSL board, containing the RAW measurements from all attached sensors.",
+  "type": "object",
+  "properties": {
+    "device_name": {
+        "type":"string",
+        "description":""
+    },
+    "cellnumber":{
+        "type":"integer",
+        "description":""
+    },
+    "batt_mv":{
+        "type":"integer",
+        "description":""
+    },
+    "uptime_s":{
+        "type":"integer",
+        "description":""
+    },
+    "chmln_top_ohms":{
+        "type":"number",
+        "description":""
+    },
+    "chmln_bot_ohms":{
+        "type":"number",
+        "description":""
+    },
+    "ds18b20_top_temp_c":{
+        "type":"number",
+        "description":""
+    },
+    "ds18b20_bot_temp_c":{
+        "type":"number",
+        "description":""
+    },
+    "smt_vwc_raw":{
+        "type":"integer",
+        "description":""
+    },
+    "smt_temp_raw":{
+        "type":"integer",
+        "description":""
+    },
+    "date_created_utc":{
+        "type":"string",
+        "description":""
+    }
+  }
+}

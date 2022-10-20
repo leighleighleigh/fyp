@@ -1,0 +1,56 @@
+{
+  "$comment": "Column data JSON schema, exactly matches the JSON published by BoSL boards",
+  "title": "bosl.ColumnData",
+  "description": "A single data-point reported from a BoSL board, containing the RAW measurements from all attached sensors.",
+  "type": "object",
+  "properties": {
+    "chmln_top_ohms_smooth":{
+        "type":"number",
+        "description":""
+    },
+    "chmln_bot_ohms_smooth":{
+        "type":"number",
+        "description":""
+    },
+    "chmln_top_cb_uncalibrated":{
+        "type":"number",
+        "description":"Assumes tempC = 24"
+    },
+    "chmln_bot_cb_uncalibrated":{
+        "type":"number",
+        "description":"Assumes tempC = 24"
+    },
+    "chmln_top_cb":{
+        "type":"number",
+        "description":"centibar"
+    },
+    "chmln_bot_cb":{
+        "type":"number",
+        "description":"centibar"
+    },
+    "chmln_top_cb_rate":{
+        "type":"number",
+        "description":"centibar/second"
+    },
+    "chmln_bot_cb_rate":{
+        "type":"number",
+        "description":"centibar/second"
+    },
+    "ds18b20_top_temp_c":{
+        "type":"number",
+        "description":""
+    },
+    "ds18b20_bot_temp_c":{
+        "type":"number",
+        "description":""
+    },
+    "smt_vwc_pct":{
+        "type":"number",
+        "description":"Percentage VWC (volumetric water content)"
+    },
+    "smt_temp_c":{
+        "type":"number",
+        "description":"Temperature Celcius"
+    }
+  }
+}
