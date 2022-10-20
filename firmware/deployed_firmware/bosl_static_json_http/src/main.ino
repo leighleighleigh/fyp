@@ -13,9 +13,9 @@
   #define SLEEP_TIME 600
 #endif
 
-#ifndef CELLNUMBER
-  #define CELLNUMBER "0455??????"
-#endif
+// #ifndef CELLNUMBER
+//   #define CELLNUMBER "0455??????"
+// #endif
 
 // SMT100 analog inputs
 #define SMT_TMP A0
