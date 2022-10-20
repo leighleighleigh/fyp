@@ -13,9 +13,9 @@
   #define SLEEP_TIME 600
 #endif
 
-#ifndef CELLNUMBER
-  #define CELLNUMBER "0455??????"
-#endif
+// #ifndef CELLNUMBER
+//   #define CELLNUMBER "0455??????"
+// #endif
 
 // SMT100 analog inputs
 #define SMT_TMP A0
@@ -78,22 +78,30 @@ void Sleepy(uint16_t tsleep)
 
 void sendPOST()
 {
-    StaticJsonDocument<300> doc;
+    StaticJsonDocument<200> doc;
     // deserializeJson(doc, jsonSchema);
     // Convert the document to an object
     JsonObject obj = doc.to<JsonObject>();
 
-    obj[F("device_name")] = boardName;
+    obj[F("id")] = boardName;
     // obj[F("imei")] = imei;
-    obj[F("cellnumber")] = CELLNUMBER;
-    obj[F("batt_mv")] = vBatt;
-    obj[F("uptime_s")] = millis()/1000;
-    obj[F("chmln_top_ohms")] = upper_sensorResistance;
-    obj[F("chmln_bot_ohms")] = lower_sensorResistance;
-    obj[F("ds18b20_top_temp_c")] = upper_temp;
-    obj[F("ds18b20_bot_temp_c")] = lower_temp;
-    obj[F("smt_vwc_raw")] = rawSoil;
-    obj[F("smt_temp_raw")] = rawTemp;
+    obj[F("imei")] = imei;
+    obj[F("bat")] = vBatt;
+    // obj[F("uptime_s")] = millis()/1000;
+    // obj[F("uR")] = upper_sensorResistance;
+    // obj[F("lR")] = lower_sensorResistance;
+    // Changed to report the RAW values of everything.
+    // This helps identify issues with wiring.
+    obj[F("uCHA")] = upper_rawA;
+    obj[F("uCHB")] = upper_rawB;
+    obj[F("lCHA")] = lower_rawA;
+    obj[F("lCHB")] = lower_rawB;
+    // Digital temp sensors
+    obj[F("uT")] = upper_temp;
+    obj[F("lT")] = lower_temp;
+    // Raw ADC readings
+    obj[F("smtVWC")] = rawSoil;
+    obj[F("smtT")] = rawTemp;
 
     int counter = 0;
     while (counter < 3 && !fona.postData("POST", URL, obj, token))
@@ -115,9 +123,9 @@ void loop()
   // Read SMT100 analogue values
   readSMT(SMT_TMP, SMT_SOIL, &rawTemp, &rawSoil);
   // Read upper chameleon
-  readChameleon(CHAMELEON_UPPER_A, CHAMELEON_UPPER_B, &upper_rawA, &upper_rawB, &upper_rawAverage, &upper_sensorResistance);
+  readChameleonRaw(CHAMELEON_UPPER_A, CHAMELEON_UPPER_B, &upper_rawA, &upper_rawB);
   // Read lower chameleon
-  readChameleon(CHAMELEON_LOWER_A, CHAMELEON_LOWER_B, &lower_rawA, &lower_rawB, &lower_rawAverage, &lower_sensorResistance);
+  readChameleonRaw(CHAMELEON_LOWER_A, CHAMELEON_LOWER_B, &lower_rawA, &lower_rawB);
 
   // Setup FONA
   boolean setupGood = setupFONA();
@@ -139,5 +147,5 @@ void loop()
   // delay(1000);
   Serial.println("Sleeping...");
   Sleepy(SLEEP_TIME);
-  Serial.println("...waking up!!!");
+  // Serial.println("...waking up!!!");
 }
