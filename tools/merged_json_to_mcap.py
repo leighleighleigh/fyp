@@ -54,7 +54,7 @@ def ohm_to_cb(rS, tempC):
         return abs(((rS/1000)*23.156-12.736)*-(1+0.018*(tempC-tempCalib)))
 
     if rS < 8000:
-        return abs((-3.213*(rS/1000)-4.093)/(1-0.009733*(rS/1000)-0.01205*(tempC)))
+        return abs((-3.213*(rS/1000.0)-4.093)/(1-0.009733*(rS/1000.0)-0.01205*(tempC)))
 
     if rS < 35000:
         return abs(-2.246-5.239*(rS/1000.00)*(1+.018*(tempC-tempCalib))-.06756*(rS/1000.00)*(rS/1000.00)*((1.00+0.018*(tempC-tempCalib)*(1.00+0.018*(tempC-tempCalib)))))
@@ -173,7 +173,7 @@ with open("merged.mcap","wb") as f_mcap:
 
             # Some digital sensors are swapped around - this is observable by the 'leading peak' of the data.
             # As the column is filled from the top, it's natural that the top sensor will peak first.
-            swapTempList = ["P5"]
+            swapTempList = ["P5","P4","C2","C3","C4","C5","S2","S4","S5"]
 
             if c in swapTempList:
                 device['uT_'] = device['uT'].copy()
