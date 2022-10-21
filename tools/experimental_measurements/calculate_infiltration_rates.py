@@ -44,5 +44,5 @@ if __name__ == "__main__":
 
     pt.sortby = "infiltration_rate"
 
-    print(pt.get_latex_string())
+    print(pt)
     print("* malfunction of column observed")

@@ -43,6 +43,50 @@
     "smtT_c":{
         "type":"number",
         "description":"Temperature Celcius"
+    },
+    "id": {
+        "type":"string",
+        "description":""
+    },
+    "imei":{
+        "type":"string",
+        "description":""
+    },
+    "bat":{
+        "type":"integer",
+        "description":""
+    },
+    "uCHA":{
+        "type":"integer",
+        "description":"Analog reading frmo Upper Chameleon, Channel A"
+    },
+    "uCHB":{
+        "type":"integer",
+        "description":"Analog reading frmo Upper Chameleon, Channel B"
+    },
+    "lCHA":{
+        "type":"integer",
+        "description":"Analog reading frmo Lower Chameleon, Channel A"
+    },
+    "lCHB":{
+        "type":"integer",
+        "description":"Analog reading frmo Lower Chameleon, Channel B"
+    },
+    "uT":{
+        "type":"number",
+        "description":"Upper Temperature Celcius from DS18B20"
+    },
+    "lT":{
+        "type":"number",
+        "description":"Lower Temperature Celcius from DS18B20"
+    },
+    "smtVWC":{
+        "type":"integer",
+        "description":"Analog Volumetric Water Content reading from SMT100"
+    },
+    "smtT":{
+        "type":"integer",
+        "description":"Analog temperature reading from SMT100"
     }
   }
 }

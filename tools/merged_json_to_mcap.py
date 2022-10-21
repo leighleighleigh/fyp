@@ -51,10 +51,10 @@ def ohm_to_cb(rS, tempC):
         return 0
 
     if rS < 1000:
-        return abs((rS/1000*23.156-12.736)*-(1+0.018*(tempC-tempCalib)))
+        return abs(((rS/1000)*23.156-12.736)*-(1+0.018*(tempC-tempCalib)))
 
     if rS < 8000:
-        return abs((-3.213*(rS/1000.00)-4.093)/(1-0.009733*(rS/1000.00)-0.01205*(tempC)))
+        return abs((-3.213*(rS/1000)-4.093)/(1-0.009733*(rS/1000)-0.01205*(tempC)))
 
     if rS < 35000:
         return abs(-2.246-5.239*(rS/1000.00)*(1+.018*(tempC-tempCalib))-.06756*(rS/1000.00)*(rS/1000.00)*((1.00+0.018*(tempC-tempCalib)*(1.00+0.018*(tempC-tempCalib)))))
@@ -121,9 +121,15 @@ with open("merged.mcap","wb") as f_mcap:
     )
 
     column_channel = writer.register_channel(
-        topic=f"/raw_columns",
+        topic=f"/raw",
         message_encoding=MessageEncoding.JSON,
         schema_id=schema_raw,
+    )
+
+    column_channel_calc = writer.register_channel(
+        topic="/calc",
+        message_encoding=MessageEncoding.JSON,
+        schema_id=schema_calc,
     )
 
     for idx, gpx in enumerate(deviceprefix):
@@ -164,6 +170,16 @@ with open("merged.mcap","wb") as f_mcap:
             device['lCHAB'] = ((device['lCHA'] + device['lCHB'])/2)
             # device['lCHR'] = 10 * (1023.0 - device['lCHAB']) / device['lCHAB']
             device['lCHR'] = device['lCHAB'].map(lambda x: 10 * (1023.0 - x) / x)
+
+            # Some digital sensors are swapped around - this is observable by the 'leading peak' of the data.
+            # As the column is filled from the top, it's natural that the top sensor will peak first.
+            swapTempList = ["P5"]
+
+            if c in swapTempList:
+                device['uT_'] = device['uT'].copy()
+                device['uT'] = device['lT'].copy()
+                device['lT'] = device['uT_']
+                # device['uT'], device['lT'] = device['lT'], device['uT']
 
             # Ohms to Centibar
             device['uCB'] = apply_kohm_to_cb(device, chameleonKey='uCHR', tempKey='uT')
@@ -244,6 +260,13 @@ with open("merged.mcap","wb") as f_mcap:
                 # Raw data message
                 writer.add_message(
                     channel_raw_id,
+                    log_time=t,
+                    data=row.to_json().encode('utf-8'),
+                    publish_time=t
+                )
+
+                writer.add_message(
+                    column_channel_calc,
                     log_time=t,
                     data=row.to_json().encode('utf-8'),
                     publish_time=t
