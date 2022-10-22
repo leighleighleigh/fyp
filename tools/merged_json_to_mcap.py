@@ -135,6 +135,10 @@ with open("merged.mcap","wb") as f_mcap:
     for idx, gpx in enumerate(deviceprefix):
         device_group = df[df['id'].str[0] == gpx]
 
+        # All calculated data for this group is stored here, for averaging later
+        # Blank dataframe same as device_group
+        device_group_data = []
+
         # Iterate over individual devices
         for cidx, c in enumerate(device_group['id'].unique()):
             # g contains the data for a single column within this column group
@@ -187,7 +191,7 @@ with open("merged.mcap","wb") as f_mcap:
 
             # Swap chameleons if they were wired incorrectly
             # Swaps the raw data (uCHA,uCHB,uCHAB,uCHR <=> lCHA,lCHB,lCHAB,lCHR)
-            swapChameleonList = ["C2","C3","C4","S2","S3","S4"]
+            swapChameleonList = ["C1","C2","C3","C4","S2","S3","S4","P1","P5","S1","S5"]
 
             if c in swapChameleonList:
                 swapcolumns("uCHA","lCHA")
@@ -245,22 +249,25 @@ with open("merged.mcap","wb") as f_mcap:
                 # each sample is ~5 minutes
                 # 12 samples is 1 hour
                 # 6 samples is 30 minutes
-                return pd.Series(device[key].copy()).rolling(12).apply(lambda x: polyfit(range(len(x)), x, 1)[0])
+                return pd.Series(device[key].copy()).rolling(6).apply(lambda x: polyfit(range(len(x)), x, 1)[0])
 
-            # device['uCB_rate'] = rollinglintrend("uCB")
-            # device['lCB_rate'] = rollinglintrend("lCB")
+            device['uCB_rate'] = rollinglintrend("uCB")
+            device['lCB_rate'] = rollinglintrend("lCB")
 
             # Calculate the rate of change of chmln_top_cb, w.r.t the time index
-            device['uCB_rate'] = device['uCB'].diff() / device['uCB'].index.to_series().diff().dt.total_seconds()
-            device['lCB_rate'] = device['lCB'].diff() / device['lCB'].index.to_series().diff().dt.total_seconds()
+            # device['uCB_rate'] = device['uCB'].diff() / device['uCB'].index.to_series().diff().dt.total_seconds()
+            # device['lCB_rate'] = device['lCB'].diff() / device['lCB'].index.to_series().diff().dt.total_seconds()
 
             # Convert the rate from cb/s to cb/h
-            device['uCB_rate'] = device['uCB_rate'] * 3600
-            device['lCB_rate'] = device['lCB_rate'] * 3600
+            # device['uCB_rate'] = device['uCB_rate'] * 3600
+            # device['lCB_rate'] = device['lCB_rate'] * 3600
 
             # Smooth!
             smooth('uCB_rate')
             smooth('lCB_rate')
+
+            # Outlier columns list - removed from group averages 
+            outlier_columns = ["P4","C4"]
 
             # Write out the data to mcap file
             for i, row in device.iterrows():
@@ -297,12 +304,38 @@ with open("merged.mcap","wb") as f_mcap:
                     publish_time=t
                 )
 
+                if c not in outlier_columns:
+                    device_group_data.append(row.copy())
+
                 writer.add_message(
                     column_channel,
                     log_time=t,
                     data=row.to_json().encode('utf-8'),
                     publish_time=t
                 )
+
+        # Create group average channel and publish the mean, resampled group data here
+        channel_calc_group_avg_id = writer.register_channel(
+            topic=f"/group_{gpx}_avg",
+            message_encoding=MessageEncoding.JSON,
+            schema_id=schema_calc,
+        )
+
+        # Resample device_group_data and average it
+        device_group_data = pd.DataFrame(device_group_data)
+        # Interpolate data to a 1 hour frequency
+        device_group_data = device_group_data.resample('1H').median().interpolate()
+
+        # Write out the data to mcap file
+        for i, row in device_group_data.iterrows():
+            t = int(row.name.to_pydatetime().timestamp()*1e9)
+
+            writer.add_message(
+                channel_calc_group_avg_id,
+                log_time=t,
+                data=row.to_json().encode('utf-8'),
+                publish_time=t
+            )
 
     writer.finish()
 
