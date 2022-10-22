@@ -24,6 +24,9 @@ if __name__ == "__main__":
     df['start_time'] = pd.to_datetime(df['start_time'])
     df['end_time'] = pd.to_datetime(df['end_time'])
 
+    # If end time is before start time, add one day
+    df.loc[df['end_time'] < df['start_time'], 'end_time'] += pd.Timedelta(days=1)
+
     # Calculate the difference between start and end times, in seconds
     df['time_diff'] = df['end_time'] - df['start_time']
     df['time_diff'] = df['time_diff'].dt.total_seconds()

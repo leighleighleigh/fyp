@@ -20,6 +20,14 @@
         "type":"number",
         "description":""
     },
+    "uCB_rate":{
+        "type":"number",
+        "description":""
+    },
+    "lCB_rate":{
+        "type":"number",
+        "description":""
+    },
     "uCB":{
         "type":"number",
         "description":""

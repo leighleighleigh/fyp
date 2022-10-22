@@ -171,15 +171,29 @@ with open("merged.mcap","wb") as f_mcap:
             # device['lCHR'] = 10 * (1023.0 - device['lCHAB']) / device['lCHAB']
             device['lCHR'] = device['lCHAB'].map(lambda x: 10 * (1023.0 - x) / x)
 
+
+            def swapcolumns(a : str,b : str):
+                device[a+"_"] = device[a].copy()
+                device[b+"_"] = device[b].copy()
+                device[a] = device[b+"_"].copy()
+                device[b] = device[a+"_"].copy()
+
             # Some digital sensors are swapped around - this is observable by the 'leading peak' of the data.
             # As the column is filled from the top, it's natural that the top sensor will peak first.
-            swapTempList = ["P5","P4","C2","C3","C4","C5","S2","S4","S5"]
+            swapTempList = ["C2","P5","P4","C3","C4","C5","S2","S4","S5"]
 
             if c in swapTempList:
-                device['uT_'] = device['uT'].copy()
-                device['uT'] = device['lT'].copy()
-                device['lT'] = device['uT_']
-                # device['uT'], device['lT'] = device['lT'], device['uT']
+                swapcolumns("uT","lT")
+
+            # Swap chameleons if they were wired incorrectly
+            # Swaps the raw data (uCHA,uCHB,uCHAB,uCHR <=> lCHA,lCHB,lCHAB,lCHR)
+            swapChameleonList = ["C2","C3","C4","S2","S3","S4"]
+
+            if c in swapChameleonList:
+                swapcolumns("uCHA","lCHA")
+                swapcolumns("uCHB","lCHB")
+                swapcolumns("uCHAB","lCHAB")
+                swapcolumns("uCHR","lCHR")
 
             # Ohms to Centibar
             device['uCB'] = apply_kohm_to_cb(device, chameleonKey='uCHR', tempKey='uT')
@@ -196,11 +210,18 @@ with open("merged.mcap","wb") as f_mcap:
             def rmzero(key):
                 device[key] = device[key][device[key]>0].copy()
 
-            # Smooth the data into 10 minute rolling averages
-            smoothperiod = '10min'
-            # 30 minutes is a little slow
-            #smoothperiod = '30min'
 
+            # Remove zeros from the data, which occur due to noise on the analog readings
+            rmzero('smtVWC_pct')
+            rmzero('smtT_c')
+            rmzero('uCB')
+            rmzero('lCB')
+            rmzero('uCB_nocal')
+            rmzero('lCB_nocal')
+
+
+            # Smooth the data into 10 minute rolling averages
+            smoothperiod = '1h'
 
             def smoothinline(key):
                 return pd.Series(device[key]).rolling(smoothperiod,center=True).mean().copy()
@@ -208,48 +229,38 @@ with open("merged.mcap","wb") as f_mcap:
             def smooth(key):
                 device[key] = smoothinline(key)
 
-            # rmzero('smt_vwc_pct')
-            # rmzero('smt_temp_c')
-            # rmzero('chmln_top_ohms')
-            # rmzero('chmln_bot_ohms')
-            # rmzero('chmln_top_cb')
-            # rmzero('chmln_bot_cb')
-            # rmzero('chmln_top_cb_uncalibrated')
-            # rmzero('chmln_bot_cb_uncalibrated')
-            # rmzero('ds18b20_top_temp_c')
-            # rmzero('ds18b20_bot_temp_c')
 
-            # smooth('smt_vwc_pct')
-            # smooth('smt_temp_c')
+            smooth('smtVWC_pct')
+            smooth('smtT_c')
+            smooth('uCB')
+            smooth('lCB')
+            smooth('uCB_nocal')
+            smooth('lCB_nocal')
+            smooth('uT')
+            smooth('lT')
 
-            # smooth('chmln_top_cb')
-            # smooth('chmln_bot_cb')
-            # smooth('chmln_top_cb_uncalibrated')
-            # smooth('chmln_bot_cb_uncalibrated')
-            # smooth('ds18b20_top_temp_c')
-            # smooth('ds18b20_bot_temp_c')
 
-            # Create subtraction entry
-            # device['chmln_top_cb_rate'] = device['chmln_top_cb'].diff()
-            # device['chmln_bot_cb_rate'] = device['chmln_bot_cb'].diff()
-
-            # Do funky polyfit window thingy
+            # Do funky polyfit window thingy to derive the rate of change
             def rollinglintrend(key):
-                # each sample is ~2 minutes
-                # 30 samples is 1 hour
-                # 5 samples is 10 minutes
-                return pd.Series(device[key].copy()).rolling(5).apply(lambda x: polyfit(range(len(x)), x, 1)[0])
+                # each sample is ~5 minutes
+                # 12 samples is 1 hour
+                # 6 samples is 30 minutes
+                return pd.Series(device[key].copy()).rolling(12).apply(lambda x: polyfit(range(len(x)), x, 1)[0])
 
-            # device['chmln_top_cb_rate'] = rollinglintrend("chmln_top_cb")
-            # device['chmln_bot_cb_rate'] = rollinglintrend("chmln_bot_cb")
+            # device['uCB_rate'] = rollinglintrend("uCB")
+            # device['lCB_rate'] = rollinglintrend("lCB")
 
             # Calculate the rate of change of chmln_top_cb, w.r.t the time index
-            # device['chmln_top_cb_rate'] = device['chmln_top_cb'].diff() / device['chmln_top_cb'].index.to_series().diff().dt.total_seconds()
-            # device['chmln_bot_cb_rate'] = device['chmln_bot_cb'].diff() / device['chmln_bot_cb'].index.to_series().diff().dt.total_seconds()
+            device['uCB_rate'] = device['uCB'].diff() / device['uCB'].index.to_series().diff().dt.total_seconds()
+            device['lCB_rate'] = device['lCB'].diff() / device['lCB'].index.to_series().diff().dt.total_seconds()
 
             # Convert the rate from cb/s to cb/h
-            # device['chmln_top_cb_rate'] = device['chmln_top_cb_rate'] * 3600
-            # device['chmln_bot_cb_rate'] = device['chmln_bot_cb_rate'] * 3600
+            device['uCB_rate'] = device['uCB_rate'] * 3600
+            device['lCB_rate'] = device['lCB_rate'] * 3600
+
+            # Smooth!
+            smooth('uCB_rate')
+            smooth('lCB_rate')
 
             # Write out the data to mcap file
             for i, row in device.iterrows():
