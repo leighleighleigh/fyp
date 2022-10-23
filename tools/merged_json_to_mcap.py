@@ -269,7 +269,7 @@ with open(args.output,"wb") as f_mcap:
                     device.loc[:,'lCB_norm'] = (device['lCB'] - device['lCB'].mean()) / abs(device['lCB'].std())
 
                     # Outlier columns list - removed from group averages 
-                    outlier_columns = ["P4","C4"]
+                    outlier_columns = ["C4","C5","S5","S4","P4"]
 
                     # Write out the data to mcap file, using another progress bar!
                     with tqdm(total=len(device), desc="Writing to MCAP file", unit="rows", leave=False) as pbar:
@@ -331,8 +331,12 @@ with open(args.output,"wb") as f_mcap:
 
             # Resample device_group_data and average it
             device_group_data = pd.DataFrame(device_group_data)
+
             # Interpolate data to a 1 hour frequency
-            device_group_data = device_group_data.resample('1H').median().interpolate()
+            device_group_data = device_group_data.resample('5min').median()
+
+            # 5 minute rolling mean of device_group_data
+            device_group_data = device_group_data.rolling('4H',center=True).mean()
 
             # Write out the data to mcap file
             for i, row in device_group_data.iterrows():
