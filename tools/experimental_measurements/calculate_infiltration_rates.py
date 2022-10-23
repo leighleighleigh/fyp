@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import argparse
 import prettytable
+from prettytable import MARKDOWN
 
 # Loads an input filename from the command line
 if __name__ == "__main__":
@@ -46,6 +47,7 @@ if __name__ == "__main__":
         pt.add_row([row[x] for x in pt.field_names])
 
     pt.sortby = "infiltration_rate"
-
+    # Print as markdown table
+    pt.set_style(MARKDOWN)
     print(pt)
     print("* malfunction of column observed")
