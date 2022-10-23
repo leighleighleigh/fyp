@@ -184,8 +184,20 @@ with open(args.output,"wb") as f_mcap:
                         schema_id=schema_calc,
                     )
 
+                    # Handle outliers in chameleon data - such as a single channel 'stuck' at 1023
+                    # A CHA/CHB value of ~900 corresponds to a chameleon resistance of 1.36kOhms, which is VERY wet!
+                    # There is a high chance of additional noise in this sensing region, due to the low impedence of the sensor,
+                    # so we will clamp any values above a set threshold.
+                    chameleonOutlierThreshold = 900
+
+                    for i, row in device.iterrows():
+
+                        # If either one of the values is above the threshold, we will set the outlier to the clamped minimum of the two channels.
+                        if row['uCHA'] > chameleonOutlierThreshold or row['uCHB'] > chameleonOutlierThreshold:
+                            device.loc[i, 'uCHA'] = min([chameleonOutlierThreshold, row['uCHA'], row['uCHB']])
+                            device.loc[i, 'uCHB'] = min([chameleonOutlierThreshold, row['uCHA'], row['uCHB']])
+                        
                     # Calculate average of Chameleon A/B channels, to derive resistance
-                    # Upper chameleon
                     device.loc[:,'uCHAB'] = ((device['uCHA'] + device['uCHB'])/2)
                     # Explicit notation for resistance conversion
                     # device['uCHR'] = 10 * (1023.0 - device['uCHAB']) / device['uCHAB']
@@ -205,15 +217,19 @@ with open(args.output,"wb") as f_mcap:
 
                     # Some digital sensors are swapped around - this is observable by the 'leading peak' of the data.
                     # As the column is filled from the top, it's natural that the top sensor will peak first.
-                    # swapTempList = ["C2","P5","P4","C3","C4","C5","S2","S4","S5"]
-                    swapTempList = ["C2","P5","P4","C3","C4","S2","S4","S5"]
+                    # swapTempList = ["C2","P5","P4","C3","C4","S2","S4","S5"]
+
+                    # Temperature swaps validated on 23/10/2022
+                    swapTempList = ["C2","C3","C4","C5","P4","P5","S1","S2","S4","S5"]
 
                     if c in swapTempList:
                         swapcolumns("uT","lT")
 
                     # Swap chameleons if they were wired incorrectly
-                    # Swaps the raw data (uCHA,uCHB,uCHAB,uCHR <=> lCHA,lCHB,lCHAB,lCHR)
-                    swapChameleonList = ["C1","C2","C3","C4","S2","S3","S4","P1","P5","S1","S5"]
+                    # NO SWAPS validated on 23/10/2022.
+                    # Potential for miswired chameleons still possible.
+                    swapChameleonList = []
+                    # swapChameleonList = []
 
                     if c in swapChameleonList:
                         swapcolumns("uCHA","lCHA")
@@ -238,7 +254,6 @@ with open(args.output,"wb") as f_mcap:
                     def rmzero(key):
                         # Remove rows where the column 'key' are lessthan or equal to zero
                         device.drop(device[device[key] <= 0].index, inplace=True)
-                        # device[key] = device[key][device[key]>0].copy()
 
 
                     # Remove zeros from the data, which occur due to noise on the analog readings
@@ -249,51 +264,9 @@ with open(args.output,"wb") as f_mcap:
                     rmzero('uCB_nocal')
                     rmzero('lCB_nocal')
 
-
-                    # Smooth the data into 10 minute rolling averages
-                    smoothperiod = '1h'
-
-                    def smoothinline(key):
-                        # Smooth only the column 'key' using a rolling average
-                        return device[key].rolling(smoothperiod,center=True).mean()
-
-                    def smooth(key):
-                        # Apply rolling average to the 'key' column, using '.loc'
-                        device.loc[:,key] = smoothinline(key)
-
-
-                    smooth('smtVWC_pct')
-                    smooth('smtT_c')
-                    smooth('uCB')
-                    smooth('lCB')
-                    smooth('uCB_nocal')
-                    smooth('lCB_nocal')
-                    smooth('uT')
-                    smooth('lT')
-
-
-                    # Do funky polyfit window thingy to derive the rate of change
-                    def rollinglintrend(key):
-                        # each sample is ~5 minutes
-                        # 12 samples is 1 hour
-                        # 6 samples is 30 minutes
-                        # Apply a rolling linear trend to the 'key' column, using '.loc'
-                        return device[key].rolling(6).apply(lambda x: polyfit(range(len(x)), x, 1)[0])
-
-                    device.loc[:,'uCB_rate'] = rollinglintrend("uCB")
-                    device.loc[:,'lCB_rate'] = rollinglintrend("lCB")
-
-                    # Calculate the rate of change of chmln_top_cb, w.r.t the time index
-                    # device['uCB_rate'] = device['uCB'].diff() / device['uCB'].index.to_series().diff().dt.total_seconds()
-                    # device['lCB_rate'] = device['lCB'].diff() / device['lCB'].index.to_series().diff().dt.total_seconds()
-
-                    # Convert the rate from cb/s to cb/h
-                    # device['uCB_rate'] = device['uCB_rate'] * 3600
-                    # device['lCB_rate'] = device['lCB_rate'] * 3600
-
-                    # Smooth!
-                    smooth('uCB_rate')
-                    smooth('lCB_rate')
+                    # Calculate normalised series of uCB and lCB, uCB_norm and lCB_norm
+                    device.loc[:,'uCB_norm'] = (device['uCB'] - device['uCB'].mean()) / abs(device['uCB'].std())
+                    device.loc[:,'lCB_norm'] = (device['lCB'] - device['lCB'].mean()) / abs(device['lCB'].std())
 
                     # Outlier columns list - removed from group averages 
                     outlier_columns = ["P4","C4"]

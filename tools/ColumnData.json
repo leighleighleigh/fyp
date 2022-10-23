@@ -20,11 +20,11 @@
         "type":"number",
         "description":""
     },
-    "uCB_rate":{
+    "uCB_norm":{
         "type":"number",
         "description":""
     },
-    "lCB_rate":{
+    "lCB_norm":{
         "type":"number",
         "description":""
     },
