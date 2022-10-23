@@ -9,6 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
+            "args": ["merged.json","merged.mcap"],
             "console": "integratedTerminal",
             "justMyCode": true
         }

@@ -12,38 +12,44 @@ from mcap.well_known import MessageEncoding, SchemaEncoding
 from mcap.writer import Writer
 from numpy import polyfit
 
+# Argument parsing for date range trim
+import argparse
+parser = argparse.ArgumentParser(description='Converts line-separated JSON message files into MCAP files.')
+parser.add_argument('input', type=str, help='Input filename of a line-separated JSON file', default="merged.json")
+parser.add_argument('output', type=str, help='Output MCAP filename', default="merged.mcap")
+parser.add_argument('--start', type=str, help='Start date to trim to (inclusive). e.g: 2022-10-21 22:00:00', default=None)
+parser.add_argument('--end', type=str, help='End date to trim to (inclusive). e.g: 2022-10-23 22:00:00', default=None)
+args = parser.parse_args()
+
+
 # Creates a Pandas Dataframe object from the json data
-df = pd.read_json("merged.json", orient="records", lines=True)
-
-
-# def unpack(x):
-#     rv = []
-#     for v in x:
-#         if isinstance(v, dict):
-#             rv.append([*v.values()][0])
-#         else:
-#             rv.append(v)
-#     return rv
-
-
-# df = df.apply(unpack)
-#print(df)
-
+df = pd.read_json(args.input, orient="records", lines=True)
 # Replace index with the converted date_created_utc column
 df['date_created_utc'] = pd.to_datetime(df['date_created_utc'])
 df = df.set_index('date_created_utc')
-#print(df)
 # Convert index to australian timezone (from UTC)
 eastern = pytz.timezone('Australia/Melbourne')
 df.index = df.index.tz_localize(pytz.utc)
-#print(df)
 df.index = df.index.tz_convert(eastern)
-#print(df)
+
+# If --start or --end times were provided, trim the dataframe to that range.
+# These arguments must be parsed from string to datetime objects
+if args.start is not None:
+    start = datetime.datetime.strptime(args.start, '%Y-%m-%d %H:%M:%S')
+    # Make the datetime timezone-aware
+    start = pytz.timezone('Australia/Melbourne').localize(start)
+    # Apply start time to dataframe index, avoiding key errors
+    df = df[df.index >= start]
+
+
+if args.end is not None:
+    end = datetime.datetime.strptime(args.end, '%Y-%m-%d %H:%M:%S')
+    end = pytz.timezone('Australia/Melbourne').localize(end)
+    df = df[df.index <= end]
+
 
 # Using the value from the website for watermark reading
 # Uses OHMS not kOhms
-
-
 def ohm_to_cb(rS, tempC):
     tempCalib = 24
 
@@ -95,7 +101,7 @@ def convert_smt_temp(df):
 deviceprefix = ['C', 'P', 'S']
 
 # Open mcap file
-with open("merged.mcap","wb") as f_mcap:
+with open(args.output,"wb") as f_mcap:
     # Build an MCAP writer for this device
     writer = Writer(f_mcap)
     writer.start("x-jsonschema", library="bosl-json")
@@ -133,16 +139,19 @@ with open("merged.mcap","wb") as f_mcap:
     )
 
     for idx, gpx in enumerate(deviceprefix):
-        device_group = df[df['id'].str[0] == gpx]
+        # Get a view of df, where id==gpx
+        device_group_mask = df['id'].str.startswith(gpx)
+        device_group = df.loc[device_group_mask]
 
         # All calculated data for this group is stored here, for averaging later
         # Blank dataframe same as device_group
         device_group_data = []
 
-        # Iterate over individual devices
+        # Iterate over individual devices, e.g C1/C2/C3 in group C.
         for cidx, c in enumerate(device_group['id'].unique()):
-            # g contains the data for a single column within this column group
-            device = device_group[device_group['id'] == c]
+            # Get the single device from the group, using another DF mask
+            device_mask = df['id'].str.contains(c)
+            device = df.loc[device_mask].copy()
 
             # Extract all the device ID's in the source file
             channel_raw_id = writer.register_channel(
@@ -165,22 +174,22 @@ with open("merged.mcap","wb") as f_mcap:
 
             # Calculate average of Chameleon A/B channels, to derive resistance
             # Upper chameleon
-            device['uCHAB'] = ((device['uCHA'] + device['uCHB'])/2)
+            device.loc[:,'uCHAB'] = ((device['uCHA'] + device['uCHB'])/2)
             # Explicit notation for resistance conversion
             # device['uCHR'] = 10 * (1023.0 - device['uCHAB']) / device['uCHAB']
             # Alternate conversion using map function
-            device['uCHR'] = device['uCHAB'].map(lambda x: 10 * (1023.0 - x) / x)
+            device.loc[:,'uCHR'] = device['uCHAB'].map(lambda x: 10 * (1023.0 - x) / x)
             # Lower chameleon
-            device['lCHAB'] = ((device['lCHA'] + device['lCHB'])/2)
+            device.loc[:,'lCHAB'] = ((device['lCHA'] + device['lCHB'])/2)
             # device['lCHR'] = 10 * (1023.0 - device['lCHAB']) / device['lCHAB']
-            device['lCHR'] = device['lCHAB'].map(lambda x: 10 * (1023.0 - x) / x)
+            device.loc[:,'lCHR'] = device['lCHAB'].map(lambda x: 10 * (1023.0 - x) / x)
 
 
             def swapcolumns(a : str,b : str):
-                device[a+"_"] = device[a].copy()
-                device[b+"_"] = device[b].copy()
-                device[a] = device[b+"_"].copy()
-                device[b] = device[a+"_"].copy()
+                device.loc[:,a+"_"] = device.loc[:,a]
+                device.loc[:,b+"_"] = device.loc[:,b]
+                device.loc[:,a] = device.loc[:,b+"_"]
+                device.loc[:,b] = device.loc[:,a+"_"]
 
             # Some digital sensors are swapped around - this is observable by the 'leading peak' of the data.
             # As the column is filled from the top, it's natural that the top sensor will peak first.
@@ -200,19 +209,23 @@ with open("merged.mcap","wb") as f_mcap:
                 swapcolumns("uCHR","lCHR")
 
             # Ohms to Centibar
-            device['uCB'] = apply_kohm_to_cb(device, chameleonKey='uCHR', tempKey='uT')
-            device['lCB'] = apply_kohm_to_cb(device, chameleonKey='lCHR', tempKey='lT')
+            # Convert from resistance of chameleon sensor, to a water tension reading in centi-bar.
+            # Temperature is also used to apply the known temperature calibration model.
+            device.loc[:,'uCB'] = apply_kohm_to_cb(device, chameleonKey='uCHR', tempKey='uT')
+            device.loc[:,'lCB'] = apply_kohm_to_cb(device, chameleonKey='lCHR', tempKey='lT')
 
-            device['uCB_nocal'] = apply_kohm_to_cb(device, chameleonKey='uCHR')
-            device['lCB_nocal'] = apply_kohm_to_cb(device, chameleonKey='lCHR')
+            device.loc[:,'uCB_nocal'] = apply_kohm_to_cb(device, chameleonKey='uCHR')
+            device.loc[:,'lCB_nocal'] = apply_kohm_to_cb(device, chameleonKey='lCHR')
             
             # Convert to percentages
-            device['smtVWC_pct'] = convert_smt_vwc(device)
-            device['smtT_c'] = convert_smt_temp(device)
+            device.loc[:,'smtVWC_pct'] = convert_smt_vwc(device)
+            device.loc[:,'smtT_c'] = convert_smt_temp(device)
 
             # Remove zero-values
             def rmzero(key):
-                device[key] = device[key][device[key]>0].copy()
+                # Remove rows where the column 'key' are lessthan or equal to zero
+                device.drop(device[device[key] <= 0].index, inplace=True)
+                # device[key] = device[key][device[key]>0].copy()
 
 
             # Remove zeros from the data, which occur due to noise on the analog readings
@@ -228,10 +241,12 @@ with open("merged.mcap","wb") as f_mcap:
             smoothperiod = '1h'
 
             def smoothinline(key):
-                return pd.Series(device[key]).rolling(smoothperiod,center=True).mean().copy()
+                # Smooth only the column 'key' using a rolling average
+                return device[key].rolling(smoothperiod,center=True).mean()
 
             def smooth(key):
-                device[key] = smoothinline(key)
+                # Apply rolling average to the 'key' column, using '.loc'
+                device.loc[:,key] = smoothinline(key)
 
 
             smooth('smtVWC_pct')
@@ -249,10 +264,11 @@ with open("merged.mcap","wb") as f_mcap:
                 # each sample is ~5 minutes
                 # 12 samples is 1 hour
                 # 6 samples is 30 minutes
-                return pd.Series(device[key].copy()).rolling(6).apply(lambda x: polyfit(range(len(x)), x, 1)[0])
+                # Apply a rolling linear trend to the 'key' column, using '.loc'
+                return device[key].rolling(6).apply(lambda x: polyfit(range(len(x)), x, 1)[0])
 
-            device['uCB_rate'] = rollinglintrend("uCB")
-            device['lCB_rate'] = rollinglintrend("lCB")
+            device.loc[:,'uCB_rate'] = rollinglintrend("uCB")
+            device.loc[:,'lCB_rate'] = rollinglintrend("lCB")
 
             # Calculate the rate of change of chmln_top_cb, w.r.t the time index
             # device['uCB_rate'] = device['uCB'].diff() / device['uCB'].index.to_series().diff().dt.total_seconds()
