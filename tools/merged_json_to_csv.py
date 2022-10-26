@@ -29,7 +29,7 @@ import typing
 # Argument parsing for date range trim
 import argparse
 parser = argparse.ArgumentParser(description='Converts line-separated JSON message files into CSV files.')
-parser.add_argument('input', type=str, help='Input filename of a line-separated JSON file', default="merged.json")
+parser.add_argument('input', type=str, help='Input filename of a line-separated JSON file', default="merged.json", nargs='?')
 parser.add_argument('output', type=str, help='Output CSV filename', default="merged.csv", nargs='?')
 parser.add_argument('--exclude-legacy', action='store_true', help='Exclude legacy data format (pre-calculated values) in the output', default=False)
 parser.add_argument('--start', type=str, help='Start date to trim to (inclusive). e.g: "2022-10-21 22:00:00"', default=None)
