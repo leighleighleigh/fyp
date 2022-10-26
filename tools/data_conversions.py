@@ -15,7 +15,7 @@ import numpy as np
 # Convert two raw chameleon readings (channel A and B), and convert it to an ohms value
 def chameleon_raw_to_ohms(rawA, rawB) -> float:
     rawAvg = (rawA+rawB)/2
-    return 10000*(1023.0 - rawAvg)/rawAvg
+    return 10*((1023.0 - rawAvg)/rawAvg)*1000
 
 # Using the value from the website for watermark reading
 # Uses OHMS not kOhms
