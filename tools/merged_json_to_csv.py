@@ -15,6 +15,10 @@ Last updated 10/2022
 
 USAGE
 python3 merged_json_to_csv.py <input_file> <output_file> [--exclude-legacy] [--start <start_time>] [--end <end_time>]
+
+PRO TIP!
+Download the 'PlotJuggler' program to view the CSV file, and explore the data easily!
+Use "yyyy-MM-dd HH:mm:ss+11:00" as the DateTime format string (WITHOUT THE QUOTES), for it to load properly.
 """
 
 from pathlib import Path
