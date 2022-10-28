@@ -38,6 +38,8 @@ for name, group in groups:
 
 # Now we will generate a CSV for each GROUP, which is the first letter of the id field
 groups = df.groupby(df['id'].str[0])
+# This df will contain all three groups
+alldf = None
 
 for name, group in groups:
     # Make blank dataframe
@@ -58,7 +60,15 @@ for name, group in groups:
         else:
             df = df.join(colgroup, how='outer')
 
+        # If alldf is none, set it to this first colgroup
+        if alldf is None:
+            alldf = colgroup
+        else:
+            alldf = alldf.join(colgroup, how='outer')
+
     df.to_csv(f"data_split/group_{name}.csv", index=True)
+
+alldf.to_csv(f"data_split/all_columns.csv", index=True)
 
 
 
