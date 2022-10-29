@@ -6,7 +6,7 @@
     <DockSplitter sizes="0.334073;0.331853;0.334073" orientation="-" count="3">
      <DockArea name="...">
       <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665633600.000000" top="50.000000" right="1667012700.000000" bottom="5.000000"/>
+       <range left="1665700800.000000" top="50.000000" right="1666516500.000000" bottom="5.000000"/>
        <limitY max="50" min="5"/>
        <curve color="#1ac938" name="C1_smt_vwc_percentage"/>
        <curve color="#ff7f0e" name="C2_smt_vwc_percentage"/>
@@ -17,7 +17,7 @@
      </DockArea>
      <DockArea name="...">
       <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665633600.000000" top="50.000000" right="1667012700.000000" bottom="5.000000"/>
+       <range left="1665700800.000000" top="50.000000" right="1666516500.000000" bottom="5.000000"/>
        <limitY max="50" min="5"/>
        <curve color="#9467bd" name="P1_smt_vwc_percentage"/>
        <curve color="#bcbd22" name="P3_smt_vwc_percentage"/>
@@ -28,7 +28,7 @@
      </DockArea>
      <DockArea name="...">
       <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665633600.000000" top="50.000000" right="1667012700.000000" bottom="5.000000"/>
+       <range left="1665700800.000000" top="50.000000" right="1666516500.000000" bottom="5.000000"/>
        <limitY max="50" min="5"/>
        <curve color="#1f77b4" name="S2_smt_vwc_percentage"/>
        <curve color="#d62728" name="S3_smt_vwc_percentage"/>
@@ -45,7 +45,7 @@
     <DockSplitter sizes="0.332963;0.334073;0.332963" orientation="-" count="3">
      <DockArea name="...">
       <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665633600.000000" top="100.000000" right="1667012700.000000" bottom="0.000000"/>
+       <range left="1665634800.000000" top="100.000000" right="1666519500.000000" bottom="0.000000"/>
        <limitY max="100" min="0"/>
        <curve color="#d62728" name="C1_upper_chameleon_centibar"/>
        <curve color="#1ac938" name="C2_upper_chameleon_centibar"/>
@@ -56,7 +56,7 @@
      </DockArea>
      <DockArea name="...">
       <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665633600.000000" top="100.000000" right="1667012700.000000" bottom="0.000000"/>
+       <range left="1665700800.000000" top="100.000000" right="1666516500.000000" bottom="0.000000"/>
        <limitY max="100" min="0"/>
        <curve color="#17becf" name="P1_upper_chameleon_centibar"/>
        <curve color="#bcbd22" name="P2_upper_chameleon_centibar"/>
@@ -67,7 +67,7 @@
      </DockArea>
      <DockArea name="...">
       <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665633600.000000" top="100.000000" right="1667012700.000000" bottom="0.000000"/>
+       <range left="1665700800.000000" top="100.000000" right="1666516500.000000" bottom="0.000000"/>
        <limitY max="100" min="0"/>
        <curve color="#ff7f0e" name="S1_upper_chameleon_centibar"/>
        <curve color="#f14cc1" name="S2_upper_chameleon_centibar"/>
@@ -84,7 +84,7 @@
     <DockSplitter sizes="0.332963;0.334073;0.332963" orientation="-" count="3">
      <DockArea name="...">
       <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665633600.000000" top="100.000000" right="1667012700.000000" bottom="0.000000"/>
+       <range left="1665700800.000000" top="100.000000" right="1666516500.000000" bottom="0.000000"/>
        <limitY max="100" min="0"/>
        <curve color="#1f77b4" name="C1_lower_chameleon_centibar"/>
        <curve color="#d62728" name="C2_lower_chameleon_centibar"/>
@@ -95,7 +95,7 @@
      </DockArea>
      <DockArea name="...">
       <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665633600.000000" top="100.000000" right="1667012700.000000" bottom="0.000000"/>
+       <range left="1665700800.000000" top="100.000000" right="1666516500.000000" bottom="0.000000"/>
        <limitY max="100" min="0"/>
        <curve color="#9467bd" name="P1_lower_chameleon_centibar"/>
        <curve color="#17becf" name="P2_lower_chameleon_centibar"/>
@@ -106,7 +106,7 @@
      </DockArea>
      <DockArea name="...">
       <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665633600.000000" top="100.000000" right="1667012700.000000" bottom="0.000000"/>
+       <range left="1665700800.000000" top="100.000000" right="1666516500.000000" bottom="0.000000"/>
        <limitY max="100" min="0"/>
        <curve color="#1ac938" name="S1_lower_chameleon_centibar"/>
        <curve color="#ff7f0e" name="S2_lower_chameleon_centibar"/>
@@ -123,7 +123,7 @@
     <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
      <DockArea name="...">
       <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665633600.000000" top="75.802903" right="1667012700.000000" bottom="13.918873"/>
+       <range left="1665700800.000000" top="46.477767" right="1666516500.000000" bottom="13.402520"/>
        <limitY/>
        <curve color="#1f77b4" name="group_C_mean_lower_chameleon_centibar_rolling"/>
        <curve color="#d62728" name="group_P_mean_lower_chameleon_centibar_rolling"/>
@@ -132,11 +132,74 @@
      </DockArea>
      <DockArea name="...">
       <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665633600.000000" top="24.737269" right="1667012700.000000" bottom="10.494455"/>
+       <range left="1665700800.000000" top="19.769950" right="1666516500.000000" bottom="10.901011"/>
        <limitY/>
        <curve color="#1ac938" name="group_C_mean_upper_chameleon_centibar_rolling"/>
        <curve color="#ff7f0e" name="group_P_mean_upper_chameleon_centibar_rolling"/>
        <curve color="#f14cc1" name="group_S_mean_upper_chameleon_centibar_rolling"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab containers="1" tab_name="SMT ROLLING MEAN">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
+       <range left="1665700800.000000" top="33.180193" right="1666516500.000000" bottom="24.188350"/>
+       <limitY/>
+       <curve color="#bcbd22" name="group_C_mean_smt_vwc_percentage_rolling"/>
+       <curve color="#17becf" name="group_P_mean_smt_vwc_percentage_rolling"/>
+       <curve color="#1f77b4" name="group_S_mean_smt_vwc_percentage_rolling"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab containers="1" tab_name="DS18B20">
+   <Container>
+    <DockSplitter sizes="0.470067;0.529933" orientation="-" count="2">
+     <DockArea name="...">
+      <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
+       <range left="1665700800.000000" top="30.000000" right="1666516500.000000" bottom="5.000000"/>
+       <limitY max="30" min="5"/>
+       <curve color="#d62728" name="C1_upper_temperature_celcius"/>
+       <curve color="#1ac938" name="C2_upper_temperature_celcius"/>
+       <curve color="#ff7f0e" name="C3_upper_temperature_celcius"/>
+       <curve color="#f14cc1" name="C4_upper_temperature_celcius"/>
+       <curve color="#9467bd" name="C5_upper_temperature_celcius"/>
+       <curve color="#17becf" name="P1_upper_temperature_celcius"/>
+       <curve color="#bcbd22" name="P2_upper_temperature_celcius"/>
+       <curve color="#1f77b4" name="P3_upper_temperature_celcius"/>
+       <curve color="#d62728" name="P4_upper_temperature_celcius"/>
+       <curve color="#1ac938" name="P5_upper_temperature_celcius"/>
+       <curve color="#ff7f0e" name="S1_upper_temperature_celcius"/>
+       <curve color="#f14cc1" name="S2_upper_temperature_celcius"/>
+       <curve color="#9467bd" name="S3_upper_temperature_celcius"/>
+       <curve color="#17becf" name="S4_upper_temperature_celcius"/>
+       <curve color="#bcbd22" name="S5_upper_temperature_celcius"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
+       <range left="1665700800.000000" top="30.000000" right="1666516500.000000" bottom="5.000000"/>
+       <limitY max="30" min="5"/>
+       <curve color="#1f77b4" name="C1_lower_temperature_celcius"/>
+       <curve color="#d62728" name="C2_lower_temperature_celcius"/>
+       <curve color="#1ac938" name="C3_lower_temperature_celcius"/>
+       <curve color="#ff7f0e" name="C4_lower_temperature_celcius"/>
+       <curve color="#f14cc1" name="C5_lower_temperature_celcius"/>
+       <curve color="#9467bd" name="P1_lower_temperature_celcius"/>
+       <curve color="#17becf" name="P2_lower_temperature_celcius"/>
+       <curve color="#bcbd22" name="P3_lower_temperature_celcius"/>
+       <curve color="#1f77b4" name="P4_lower_temperature_celcius"/>
+       <curve color="#d62728" name="P5_lower_temperature_celcius"/>
+       <curve color="#1ac938" name="S1_lower_temperature_celcius"/>
+       <curve color="#ff7f0e" name="S2_lower_temperature_celcius"/>
+       <curve color="#f14cc1" name="S3_lower_temperature_celcius"/>
+       <curve color="#9467bd" name="S4_lower_temperature_celcius"/>
+       <curve color="#17becf" name="S5_lower_temperature_celcius"/>
       </plot>
      </DockArea>
     </DockSplitter>

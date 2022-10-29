@@ -16,6 +16,7 @@ python3 split_csv_by_id.py <input_file>
 """
 
 from pathlib import Path
+from re import template
 from statistics import median
 from data_conversions import *
 import datetime
@@ -91,7 +92,10 @@ for name, group in groups:
     def get_series_by_suffix(df, suffix):
         # Filtering of column ID is performed here too
         temp_list = df.loc[:, df.columns.str.endswith(suffix)]
-        return temp_list.loc[:, ~temp_list.columns.str.contains('|'.join(ignore_list))]
+        if len(ignore_list):
+            return temp_list.loc[:, ~temp_list.columns.str.contains('|'.join(ignore_list))]
+        else:
+            return temp_list
 
     # This function calculates the median,mean, and stddev of a given series suffix name 
     def calc_series_stats(df, suffix):
@@ -121,7 +125,6 @@ for name, group in groups:
 
 # This is the same as above, but for devices in a single file.
 # This is resampled to equal 5 minute intervals for all data
-alldf = alldf.resample('5min').nearest()
 alldf.to_csv(f"data_split/all_columns.csv", index=True)
 
 
