@@ -16,6 +16,7 @@ python3 split_csv_by_id.py <input_file>
 """
 
 from pathlib import Path
+from statistics import median
 from data_conversions import *
 import datetime
 import json
@@ -81,24 +82,30 @@ for name, group in groups:
     # This function will take a column suffix, and return all matching series in df
     def get_series_by_suffix(df, suffix):
         return df.loc[:, df.columns.str.endswith(suffix)]
-    
-    # We can now obtain the group medians, by first getting all series of the desired suffix.
-    # First, we will calculate the median of smt_vwc_percentage
-    median_smt_vwc_percentage = get_series_by_suffix(df, 'smt_vwc_percentage')
 
-    # Iterate over a rolling datetime window, taking the mean of all columns, and storing the result into a new column
-    for i in median_smt_vwc_percentage.iterrows():
-        # i[0] is the datetime index
-        # i[1] is the series of values
-        df.loc[i[0], f'group_{name}_median_smt_vwc_percentage'] = i[1].median() 
-        df.loc[i[0], f'group_{name}_mean_smt_vwc_percentage'] = i[1].mean() 
-        df.loc[i[0], f'group_{name}_stddev_smt_vwc_percentage'] = i[1].std() 
+    # This function calculates the median,mean, and stddev of a given series suffix name 
+    def calc_series_stats(df, suffix):
+        print(".")
+        # We can now obtain the group medians, by first getting all series of the desired suffix.
+        # First, we will calculate the median of smt_vwc_percentage
+        series_suffix = get_series_by_suffix(df, suffix)
+        meanname = f'group_{suffix}_mean_{suffix}'
+        medianname = f'group_{suffix}_median_{suffix}'
+
+        # Take the median of every row, storing it into a new column
+        df[medianname] = series_suffix.median(axis=1)
+        df[meanname] = series_suffix.mean(axis=1)
+
+        # Apply a rolling mean to the data, on both calculated fields
+        df[medianname + "_rolling"] = df[medianname].rolling('1h').median()
+        df[meanname + "_rolling"] = df[meanname].rolling('1h').mean()
+        # Create standard deviations for the rolling trends
+        df[medianname + "_rolling_stddev"] = df[medianname].rolling('1h').std()
+        df[meanname + "_rolling_stddev"] = df[meanname].rolling('1h').std()
 
     # Add this series to the dataframe
-    # df[f'group_{name}_median_smt_vwc_percentage'] = median_smt_vwc_percentage
-
-    #df.loc[:,f'group_{name}_median_smt_vwc_percentage'] = median_smt_vwc_percentage.rolling('30min').median()
-    #alldf.loc[:,f'group_{name}_median_smt_vwc_percentage'] = median_smt_vwc_percentage.rolling('30min').median()
+    calc_series_stats(df, 'smt_vwc_percentage')
+    calc_series_stats(alldf, 'smt_vwc_percentage')
 
     # Finally, write out the single gropu to CSV file.
     df.to_csv(f"data_split/group_{name}.csv", index=True)
