@@ -3,7 +3,7 @@
  <tabbed_widget parent="main_window" name="Main Window">
   <Tab containers="1" tab_name="SMT100 VWC - Control, Preferential Flow, Surface Clogging">
    <Container>
-    <DockSplitter sizes="1" orientation="-" count="1">
+    <DockSplitter sizes="0.5;0.5" orientation="-" count="2">
      <DockArea name="...">
       <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
        <range left="1665541020.000000" top="50.000000" right="1666992922.000000" bottom="5.000000"/>
@@ -15,6 +15,15 @@
        <curve color="#17becf" name="C5_smt_vwc_percentage"/>
       </plot>
      </DockArea>
+     <DockArea name="...">
+      <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
+       <range left="1665541020.000000" top="162.291667" right="1666992922.000000" bottom="-3.958333"/>
+       <limitY/>
+       <curve color="#d62728" name="group_C_mean_lower_chameleon_centibar_rolling"/>
+       <curve color="#1ac938" name="group_C_mean_smt_vwc_percentage_rolling"/>
+       <curve color="#ff7f0e" name="group_C_mean_upper_chameleon_centibar_rolling"/>
+      </plot>
+     </DockArea>
     </DockSplitter>
    </Container>
   </Tab>
@@ -23,7 +32,7 @@
     <DockSplitter sizes="1" orientation="-" count="1">
      <DockArea name="...">
       <plot style="Dots" flip_x="false" flip_y="false" mode="TimeSeries">
-       <range left="1665541020.000000" top="100.000000" right="1666783132.000000" bottom="0.000000"/>
+       <range left="1665541020.000000" top="100.000000" right="1666992922.000000" bottom="0.000000"/>
        <limitY max="100" min="0"/>
        <curve color="#d62728" name="C1_upper_chameleon_centibar"/>
        <curve color="#1ac938" name="C2_upper_chameleon_centibar"/>
