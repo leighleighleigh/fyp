@@ -94,9 +94,9 @@ for name, group in groups:
         stddevname = f'group_{name}_stddev_{suffix}'
 
         # Apply a rolling mean to the data, on both calculated fields
-        df[meanname + "_rolling"] = series_suffix.median(axis=1).rolling('1h').mean()
-        df[medianname + "_rolling"] = series_suffix.median(axis=1).rolling('1h').median()
-        df[stddevname + "_rolling_stddev"] = series_suffix.median(axis=1).rolling('1h').std()
+        df[meanname + "_rolling"] = series_suffix.median(axis=1).rolling('6h').mean()
+        df[medianname + "_rolling"] = series_suffix.median(axis=1).rolling('6h').median()
+        df[stddevname + "_rolling_stddev"] = series_suffix.median(axis=1).rolling('6h').std()
 
     # Add this series to the dataframe
     calc_series_stats(df, 'smt_vwc_percentage')
