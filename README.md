@@ -12,11 +12,19 @@ Source code in this repo is best used within the [PlatformIO](https://platformio
 
 # Directory Map
 ```bash
-├── data # experimental data and plots
-├── firmware # source-code for BoSL boards
-│   └── prototype_column # 2 chameleons and 1 SMT100
-│       └── bosl_json_serial_logger # JSON data written to serial every 1 second
-└── tools # plot.py, used to convert JSON /data into plot images
+├── docs # Useful PDFs
+├── experimental_measurements # Data from falling-head test
+├── firmware # Software for microcontrollers
+│   ├── ArduinoISP # Used to recover BoSL boards, using another ATmega32u4
+│   ├── bosl_sketches # Legacy Arduino sketched
+│   └── bosl_static_json_http # Deployed code, logs to BoSL website
+├── kicad # Hardware design
+│   └── sensor_wiring # Schematic PDF is in here too!
+└── tools # Python scripts
+    ├── data # Raw data is downloaded here
+    ├── data_split # Data is processed into here, as CSV
+    ├── plotjuggler # Useful .XML layouts for PlotJuggler tool
+    └── web # PHP scripts
 ```
 
 # Links
