@@ -4,6 +4,7 @@
 > **Engineering Final Year Project** <br>
 > Author: Leigh Oliver <br>
 > Supervisor: Dr. Brandon Winfrey <br>
+> Date completed: 29/10/2022 <br>
 
 # About this repo
 My final year project is build upon the Monash-created [BoSL Board](http://www.bosl.com.au/). This board is built around the Atmega 328P microprocessor, the same as the popular Arduino Uno/Nano boards. The BoSL board also features an integrated [SIM7000G cellular modem](https://www.simcom.com/product/SIM7000G.html), capable of LTE CAT-M1 and LTE NB-IoT connectivity, allowing for internet connectivity.
