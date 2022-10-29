@@ -89,23 +89,22 @@ for name, group in groups:
         # We can now obtain the group medians, by first getting all series of the desired suffix.
         # First, we will calculate the median of smt_vwc_percentage
         series_suffix = get_series_by_suffix(df, suffix)
-        meanname = f'group_{suffix}_mean_{suffix}'
-        medianname = f'group_{suffix}_median_{suffix}'
-
-        # Take the median of every row, storing it into a new column
-        df[medianname] = series_suffix.median(axis=1)
-        df[meanname] = series_suffix.mean(axis=1)
+        meanname = f'group_{name}_mean_{suffix}'
+        medianname = f'group_{name}_median_{suffix}'
+        stddevname = f'group_{name}_stddev_{suffix}'
 
         # Apply a rolling mean to the data, on both calculated fields
-        df[medianname + "_rolling"] = df[medianname].rolling('1h').median()
-        df[meanname + "_rolling"] = df[meanname].rolling('1h').mean()
-        # Create standard deviations for the rolling trends
-        df[medianname + "_rolling_stddev"] = df[medianname].rolling('1h').std()
-        df[meanname + "_rolling_stddev"] = df[meanname].rolling('1h').std()
+        df[meanname + "_rolling"] = series_suffix.median(axis=1).rolling('1h').mean()
+        df[medianname + "_rolling"] = series_suffix.median(axis=1).rolling('1h').median()
+        df[stddevname + "_rolling_stddev"] = series_suffix.median(axis=1).rolling('1h').std()
 
     # Add this series to the dataframe
     calc_series_stats(df, 'smt_vwc_percentage')
+    calc_series_stats(df, 'upper_chameleon_centibar')
+    calc_series_stats(df, 'lower_chameleon_centibar')
     calc_series_stats(alldf, 'smt_vwc_percentage')
+    calc_series_stats(alldf, 'upper_chameleon_centibar')
+    calc_series_stats(alldf, 'lower_chameleon_centibar')
 
     # Finally, write out the single gropu to CSV file.
     df.to_csv(f"data_split/group_{name}.csv", index=True)
