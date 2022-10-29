@@ -20,7 +20,7 @@ def chameleon_raw_to_ohms(rawA, rawB) -> float:
 # Using the value from the website for watermark reading
 # Uses OHMS not kOhms
 def ohm_to_cb(rS, tempC, clamp_range=(0,100)):
-    result = 255 # Default result, unclamped value, which indicates an error in the reading
+    result = None # Default result, unclamped value, which indicates an error in the reading
     tempCalib = 24
 
     if rS < 550:
@@ -35,7 +35,10 @@ def ohm_to_cb(rS, tempC, clamp_range=(0,100)):
     elif rS < 35000:
         result = abs(-2.246-5.239*(rS/1000.00)*(1+.018*(tempC-tempCalib))-.06756*(rS/1000.00)*(rS/1000.00)*((1.00+0.018*(tempC-tempCalib)*(1.00+0.018*(tempC-tempCalib)))))
 
-    return min(max(result,clamp_range[0]),clamp_range[1])
+    if result is not None:
+        return min(max(result,clamp_range[0]),clamp_range[1])
+
+    return np.nan
 
 
 def apply_kohm_to_cb(df, chameleonKey='chmln_top_ohms', tempKey=None):

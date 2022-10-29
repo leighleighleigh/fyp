@@ -40,7 +40,7 @@ parser.add_argument('--exclude-legacy', action='store_true', help='Exclude legac
 parser.add_argument('--start', type=str, help='Start date to trim to (inclusive). e.g: "2022-10-21 22:00:00"', default=None)
 parser.add_argument('--end', type=str, help='End date to trim to (inclusive). e.g: "2022-10-23 22:00:00"', default=None)
 # Optional argument for clamped range of centibar values
-parser.add_argument('--centibar-range', type=str, help='Clamp centibar values to this min-max range, e.g: 5,80)', default="0,100")
+parser.add_argument('--centibar-range', type=str, help='Clamp centibar values to this min-max range, e.g: 5,80)', default="0,80")
 
 args = parser.parse_args()
 
