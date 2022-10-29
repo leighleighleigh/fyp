@@ -29,6 +29,7 @@ import pandas as pd
 import pytz
 import time
 import typing
+from sys import exit
 
 # Argument parsing for date range trim
 import argparse
@@ -38,8 +39,17 @@ parser.add_argument('output', type=str, help='Output CSV filename', default="mer
 parser.add_argument('--exclude-legacy', action='store_true', help='Exclude legacy data format (pre-calculated values) in the output', default=False)
 parser.add_argument('--start', type=str, help='Start date to trim to (inclusive). e.g: "2022-10-21 22:00:00"', default=None)
 parser.add_argument('--end', type=str, help='End date to trim to (inclusive). e.g: "2022-10-23 22:00:00"', default=None)
+# Optional argument for clamped range of centibar values
+parser.add_argument('--centibar-range', type=str, help='Clamp centibar values to this min-max range, e.g: 5,80)', default="0,100")
+
 args = parser.parse_args()
 
+# Unpack centibar range to tuple
+try:
+    centibar_range = tuple(map(int, args.centibar_range.split(',')))
+except:
+    print("Invalid centibar range provided. Please provide a range in the format 'min,max', e.g: 5,80")
+    exit(1)
 
 # Creates a Pandas Dataframe object from the json data
 df = pd.read_json(args.input, orient="records", lines=True)
@@ -102,8 +112,8 @@ csvfuncs["smt_vwc_raw"] = lambda row : get_legacy_or_nan(row, "smtVWC","smt_vwc_
 csvfuncs["smt_temperature_raw"] = lambda row : get_legacy_or_nan(row, "smtT","smt_temp_raw")
 
 # Calculate data from ohms to centi-bar, with temperature conversion.
-csvfuncs["upper_chameleon_centibar"] = lambda row : ohm_to_cb(get_row_chameleon_ohms(row, upper=True), get_legacy_or_nan(row, "uT","ds18b20_top_temp_c"))
-csvfuncs["lower_chameleon_centibar"] = lambda row : ohm_to_cb(get_row_chameleon_ohms(row, upper=False), get_legacy_or_nan(row, "lT","ds18b20_bot_temp_c"))
+csvfuncs["upper_chameleon_centibar"] = lambda row : ohm_to_cb(get_row_chameleon_ohms(row, upper=True), get_legacy_or_nan(row, "uT","ds18b20_top_temp_c"), centibar_range)
+csvfuncs["lower_chameleon_centibar"] = lambda row : ohm_to_cb(get_row_chameleon_ohms(row, upper=False), get_legacy_or_nan(row, "lT","ds18b20_bot_temp_c"), centibar_range)
 # Convert SMT values to SI units
 csvfuncs["smt_vwc_percentage"] = lambda row : smt_raw_to_vwc(get_legacy_or_nan(row, "smtVWC","smt_vwc_raw"))
 csvfuncs["smt_temperature_celcius"] = lambda row : smt_raw_to_temp(get_legacy_or_nan(row, "smtT","smt_temp_raw"))

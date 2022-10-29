@@ -28,7 +28,15 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Splits a CSV file into multiple files by unique values in the "id" column')
 parser.add_argument('input', type=str, help='Input CSV file', default="merged.csv", nargs='?')
+# Optional argument list for column names to ignore
+parser.add_argument('--ignore-ids', type=str, help='Comma separated list of column/device names to ignore', default="", nargs='?')
+# Optional argument to change default rolling window size from the default 24hour
+parser.add_argument('--rolling-width', type=str, help='Rolling window size, e.g: 5min,30min,1h,24h,1D', default='24h', nargs='?')
+
 args = parser.parse_args()
+
+# Split ignore list into a list, if ignore-ids parameter is not empty
+ignore_list = args.ignore_ids.split(',') if args.ignore_ids else []
 
 # Load CSV as pandas
 df = pd.read_csv(args.input)
@@ -81,11 +89,13 @@ for name, group in groups:
 
     # This function will take a column suffix, and return all matching series in df
     def get_series_by_suffix(df, suffix):
-        return df.loc[:, df.columns.str.endswith(suffix)]
+        # Filtering of column ID is performed here too
+        temp_list = df.loc[:, df.columns.str.endswith(suffix)]
+        return temp_list.loc[:, ~temp_list.columns.str.contains('|'.join(ignore_list))]
 
     # This function calculates the median,mean, and stddev of a given series suffix name 
     def calc_series_stats(df, suffix):
-        print(".")
+        print(f"Calculating stats for {name} + {suffix}")
         # We can now obtain the group medians, by first getting all series of the desired suffix.
         # First, we will calculate the median of smt_vwc_percentage
         series_suffix = get_series_by_suffix(df, suffix)
@@ -94,9 +104,9 @@ for name, group in groups:
         stddevname = f'group_{name}_stddev_{suffix}'
 
         # Apply a rolling mean to the data, on both calculated fields
-        df[meanname + "_rolling"] = series_suffix.median(axis=1).rolling('6h').mean()
-        df[medianname + "_rolling"] = series_suffix.median(axis=1).rolling('6h').median()
-        df[stddevname + "_rolling_stddev"] = series_suffix.median(axis=1).rolling('6h').std()
+        df[meanname + "_rolling"] = series_suffix.median(axis=1).rolling(args.rolling_width).mean()
+        df[medianname + "_rolling"] = series_suffix.median(axis=1).rolling(args.rolling_width).median()
+        df[stddevname + "_rolling_stddev"] = series_suffix.median(axis=1).rolling(args.rolling_width).std()
 
     # Add this series to the dataframe
     calc_series_stats(df, 'smt_vwc_percentage')
@@ -110,6 +120,8 @@ for name, group in groups:
     df.to_csv(f"data_split/group_{name}.csv", index=True)
 
 # This is the same as above, but for devices in a single file.
+# This is resampled to equal 5 minute intervals for all data
+alldf = alldf.resample('5min').nearest()
 alldf.to_csv(f"data_split/all_columns.csv", index=True)
 
 

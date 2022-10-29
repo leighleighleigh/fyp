@@ -19,23 +19,23 @@ def chameleon_raw_to_ohms(rawA, rawB) -> float:
 
 # Using the value from the website for watermark reading
 # Uses OHMS not kOhms
-def ohm_to_cb(rS, tempC):
+def ohm_to_cb(rS, tempC, clamp_range=(0,100)):
+    result = 255 # Default result, unclamped value, which indicates an error in the reading
     tempCalib = 24
 
     if rS < 550:
-        return 0
+        result = 0
 
-    if rS < 1000:
-        return abs(((rS/1000)*23.156-12.736)*-(1+0.018*(tempC-tempCalib)))
+    elif rS < 1000:
+        result = abs(((rS/1000)*23.156-12.736)*-(1+0.018*(tempC-tempCalib)))
 
-    if rS < 8000:
-        return abs((-3.213*(rS/1000.0)-4.093)/(1-0.009733*(rS/1000.0)-0.01205*(tempC)))
+    elif rS < 8000:
+        result = abs((-3.213*(rS/1000.0)-4.093)/(1-0.009733*(rS/1000.0)-0.01205*(tempC)))
 
-    if rS < 35000:
-        return abs(-2.246-5.239*(rS/1000.00)*(1+.018*(tempC-tempCalib))-.06756*(rS/1000.00)*(rS/1000.00)*((1.00+0.018*(tempC-tempCalib)*(1.00+0.018*(tempC-tempCalib)))))
+    elif rS < 35000:
+        result = abs(-2.246-5.239*(rS/1000.00)*(1+.018*(tempC-tempCalib))-.06756*(rS/1000.00)*(rS/1000.00)*((1.00+0.018*(tempC-tempCalib)*(1.00+0.018*(tempC-tempCalib)))))
 
-    # Open-circuited!
-    return 255
+    return min(max(result,clamp_range[0]),clamp_range[1])
 
 
 def apply_kohm_to_cb(df, chameleonKey='chmln_top_ohms', tempKey=None):
