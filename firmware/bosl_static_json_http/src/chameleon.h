@@ -40,7 +40,11 @@ void readChameleon(int pinA, int pinB, int *rawA, int *rawB, float *rawAvg, floa
     pinMode(pinB, INPUT);
     pinMode(pinA, OUTPUT);
     digitalWrite(pinA, HIGH);
+    // Delay to let things settle
+    delay(1);
     // Measure vY, takes 125us
+    // Take TWO measurements, as the first one might be garbage after switching the pin mode.
+    *rawB = analogRead(pinB);
     *rawB = analogRead(pinB);
     // Place into no current mode
     digitalWrite(pinA, LOW);
@@ -50,7 +54,11 @@ void readChameleon(int pinA, int pinB, int *rawA, int *rawB, float *rawAvg, floa
     pinMode(pinA, INPUT);
     pinMode(pinB, OUTPUT);
     digitalWrite(pinB, HIGH);
+    // Delay to let things settle
+    delay(1);
     // Measure vX, takes 125us
+    // As before, take two measurements.
+    *rawA = analogRead(pinA);
     *rawA = analogRead(pinA);
     // Return to no current mode
     digitalWrite(pinB, LOW);
