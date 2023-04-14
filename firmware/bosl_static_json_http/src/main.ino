@@ -92,7 +92,7 @@ void sendPOST()
     // obj[F("imei")] = imei;
     obj[F("imei")] = imei;
     obj[F("bat")] = vBatt;
-    obj[F("uptime_s")] = millis()/1000;
+    // obj[F("uptime_s")] = millis()/1000;
     // obj[F("uR")] = upper_sensorResistance;
     // obj[F("lR")] = lower_sensorResistance;
     // Changed to report the RAW values of everything.
