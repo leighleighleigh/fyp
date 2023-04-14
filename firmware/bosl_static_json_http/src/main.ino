@@ -92,7 +92,7 @@ void sendPOST()
     // obj[F("imei")] = imei;
     obj[F("imei")] = imei;
     obj[F("bat")] = vBatt;
-    // obj[F("uptime_s")] = millis()/1000;
+    obj[F("uptime_s")] = millis()/1000;
     // obj[F("uR")] = upper_sensorResistance;
     // obj[F("lR")] = lower_sensorResistance;
     // Changed to report the RAW values of everything.
@@ -128,9 +128,9 @@ void loop()
   // Read SMT100 analogue values
   readSMT(SMT_TMP, SMT_SOIL, &rawTemp, &rawSoil);
   // Read upper chameleon
-  readChameleonRaw(CHAMELEON_UPPER_A, CHAMELEON_UPPER_B, &upper_rawA, &upper_rawB);
+  readChameleonAverage(CHAMELEON_UPPER_A, CHAMELEON_UPPER_B, &upper_rawA, &upper_rawB, &upper_rawAverage, &upper_sensorResistance);
   // Read lower chameleon
-  readChameleonRaw(CHAMELEON_LOWER_A, CHAMELEON_LOWER_B, &lower_rawA, &lower_rawB);
+  readChameleonAverage(CHAMELEON_LOWER_A, CHAMELEON_LOWER_B, &lower_rawA, &lower_rawB, &lower_rawAverage, &lower_sensorResistance);
 
   // Setup FONA
   boolean setupGood = setupFONA();
