@@ -15,7 +15,16 @@ import numpy as np
 # Convert two raw chameleon readings (channel A and B), and convert it to an ohms value
 def chameleon_raw_to_ohms(rawA, rawB) -> float:
     rawAvg = (rawA+rawB)/2
-    return 10*((1023.0 - rawAvg)/rawAvg)*1000
+    # Same as VIAShop Arduino library,
+    # if the rawAvg reading is below 2, then this is either
+    # a very dry sensor, or an open-circuit.
+    if rawAvg < 2:
+        # return 10 MegOhm
+        return 10_000_000
+    else:
+        # '10' at the front here is the known chameleon resistor value, 
+        # in kOhms.
+        return 10*((1023.0 - rawAvg)/rawAvg)*1000
 
 # Using the value from the website for watermark reading
 # Uses OHMS not kOhms

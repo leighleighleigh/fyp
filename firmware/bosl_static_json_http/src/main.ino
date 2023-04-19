@@ -128,9 +128,9 @@ void loop()
   // Read SMT100 analogue values
   readSMT(SMT_TMP, SMT_SOIL, &rawTemp, &rawSoil);
   // Read upper chameleon
-  readChameleonRaw(CHAMELEON_UPPER_A, CHAMELEON_UPPER_B, &upper_rawA, &upper_rawB);
+  readChameleonAverage(CHAMELEON_UPPER_A, CHAMELEON_UPPER_B, &upper_rawA, &upper_rawB, &upper_rawAverage, &upper_sensorResistance);
   // Read lower chameleon
-  readChameleonRaw(CHAMELEON_LOWER_A, CHAMELEON_LOWER_B, &lower_rawA, &lower_rawB);
+  readChameleonAverage(CHAMELEON_LOWER_A, CHAMELEON_LOWER_B, &lower_rawA, &lower_rawB, &lower_rawAverage, &lower_sensorResistance);
 
   // Setup FONA
   boolean setupGood = setupFONA();
